@@ -1,69 +1,113 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <title>ETS Grafkom</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+  }
+  canvas {
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #000;
+  }
+  .control-group {
+    margin-bottom: 15px;
+  }
+  label {
+    display: inline-block;
+    width: 150px;
+  }
+  input[type="range"] {
+    width: 200px;
+  }
+  select, input[type="color"], input[type="range"] {
+    margin-left: 10px;
+  }
+  button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+</style>
 </head>
 
 <body>
 
-<canvas id="gl-canvas" width="1830" height="512"></canvas>
+<canvas id="gl-canvas" width="1500" height="512"></canvas>
+<br>
+<br>
 
-<!-- Object options (Cube / Sphere) -->
-<label for="objectOptions">Choose Object:</label>
-<select id="objectOptions" size="1">
+<div class="control-group">
+  <label for="objectOptions">Choose Object:</label>
+  <select id="objectOptions" size="1">
     <option value="0">Cube</option>
     <option value="1">Sphere</option>
-</select>
-<br>
+  </select>
+</div>
 
-<!-- Color options -->
-<label for="colorPicker">Choose Color:</label>
-<input type="color" id="colorPicker" name="colorPicker" value="#ff0000">
-<br>
+<div class="control-group">
+  <label for="colorPicker">Choose Color:</label>
+  <input type="color" id="colorPicker" name="colorPicker" value="#ff0000">
+</div>
 
-<!-- Object size & mass -->
-<label for="objectSize">Object Size:</label>
-<input type="range" id="objectSize" name="objectSize" min="1" max="10" value="1">
-<label for="objectMass">Object Mass (kg):</label>
-<input type="range" id="objectMass" name="objectMass" min="1" max="10" value="1">
-<br>
+<div class="control-group">
+  <label for="objectSize">Object Size:</label>
+  1 <input type="range" id="objectSize" name="objectSize" min="1" max="10" value="1"> 10
+</div>
 
+<div class="control-group">
+  <label for="objectMass">Object Mass (kg):</label>
+  1 <input type="range" id="objectMass" name="objectMass" min="1" max="10" value="1"> 10
+</div>
 
-<!-- Force options -->
-<label for="force">Force:</label>
-<input type="range" id="force" name="force" min="1" max="10" value="1">
+<div class="control-group">
+  <label for="force">Force (N):</label>
+  1 <input type="range" id="force" name="force" min="1" max="10" value="1"> 10
+</div>
 
-<!-- Trajectory options -->
-<label for="trajectoryOptions">Trajectory:</label>
-<select id="trajectoryOptions" size="1">
-  <option value="circular">Circular Motion</option>
-  <option value="straight">Straight Motion</option>
-</select>
-<br>
+<div class="control-group">
+  <label for="trajectoryOptions">Trajectory:</label>
+  <select id="trajectoryOptions" size="1">
+    <option value="circular">Circular Motion</option>
+    <option value="straight">Straight Motion</option>
+  </select>
+</div>
 
-<!-- Ligthing options -->
-<label for="ambientColor">Ambient Light:</label>
-<input type="color" id="ambientColor" value="#808080">
-<label for="diffuseColor">Diffuse Light:</label>
-<input type="color" id="diffuseColor" value="#ffffff">
-<label for="specularColor">Specular Light:</label>
-<input type="color" id="specularColor" value="#ffffff">
-<br>
+<div class="control-group">
+  <label for="ambientColor">Ambient Light:</label>
+  <input type="color" id="ambientColor" value="#808080">
+</div>
 
-<!-- Sliders for Light Position -->
-<label for="lightX">Light Position X:</label>
-<input type="range" id="lightX" min="-10" max="10" value="1">
-<label for="lightY">Light Position Y:</label>
-<input type="range" id="lightY" min="-10" max="10" value="1">
-<label for="lightZ">Light Position Z:</label>
-<input type="range" id="lightZ" min="-10" max="10" value="1">
-<br>
+<div class="control-group">
+  <label for="diffuseColor">Diffuse Light:</label>
+  <input type="color" id="diffuseColor" value="#ffffff">
+</div>
 
-<!-- Start / Stop button -->
+<div class="control-group">
+  <label for="specularColor">Specular Light:</label>
+  <input type="color" id="specularColor" value="#ffffff">
+</div>
+
+<div class="control-group">
+  <label for="lightX">Light Position X:</label>
+  -10 <input type="range" id="lightX" min="-10" max="10" value="1"> 10
+</div>
+
+<div class="control-group">
+  <label for="lightY">Light Position Y:</label>
+  -10 <input type="range" id="lightY" min="-10" max="10" value="1"> 10
+</div>
+
+<div class="control-group">
+  <label for="lightZ">Light Position Z:</label>
+  -10 <input type="range" id="lightZ" min="-10" max="10" value="1"> 10
+</div>
+
 <button id="start">Start</button>
 <button id="stop">Stop</button>
-
 
 <script src="initShaders.js"></script>
 <script src="MVnew.js"></script>
