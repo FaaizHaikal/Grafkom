@@ -26,36 +26,33 @@
   select, input[type="color"], input[type="range"] {
     margin-left: 10px;
   }
-  button {
+  .start-stop {
     margin-top: 20px;
     padding: 10px 20px;
     font-size: 16px;
   }
+
+  .increment-decrement {
+    margin-left: 10px;
+    padding: 5px 10px;
+    font-size: 16px;
+  }
+
 </style>
 </head>
 
 <body>
 
-<canvas id="gl-canvas" width="1500" height="512"></canvas>
+<canvas id="gl-canvas" width="512" height="512"></canvas>
 <br>
 <br>
 
 <div class="control-group">
   <label for="objectOptions">Choose Object:</label>
   <select id="objectOptions" size="1">
-    <option value="0">Cube</option>
-    <option value="1">Sphere</option>
+    <option value="CUBE">Cube</option>
+    <option value="DODECAHEDRON">Dodecahedron</option>
   </select>
-</div>
-
-<div class="control-group">
-  <label for="colorPicker">Choose Color:</label>
-  <input type="color" id="colorPicker" name="colorPicker" value="#ff0000">
-</div>
-
-<div class="control-group">
-  <label for="objectSize">Object Size:</label>
-  1 <input type="range" id="objectSize" name="objectSize" min="1" max="10" value="1"> 10
 </div>
 
 <div class="control-group">
@@ -71,43 +68,116 @@
 <div class="control-group">
   <label for="trajectoryOptions">Trajectory:</label>
   <select id="trajectoryOptions" size="1">
-    <option value="circular">Circular Motion</option>
-    <option value="straight">Straight Motion</option>
+    <option value="STRAIGHT">Straight</option>
+    <option value="PARABOLA">Parabola</option>
   </select>
 </div>
 
 <div class="control-group">
-  <label for="ambientColor">Ambient Light:</label>
-  <input type="color" id="ambientColor" value="#808080">
+  <label for="theta">Theta (°):</label>
+  <button class="increment-decrement" id="increaseTheta">
+    +
+  </button>
+  <button class="increment-decrement" id="decreaseTheta">
+    -
+  </button>
+</div>
+
+<div class="control-group"></div>
+  <label for="phi">Phi (°):</label>
+  <button class="increment-decrement" id="increasePhi">
+    +
+  </button>
+  <button class="increment-decrement" id="decreasePhi">
+    -
+  </button>
+</div>
+
+<div class="control-group"></div>
+  <label for="phi">R:</label>
+  <button class="increment-decrement" id="increaseR">
+    +
+  </button>
+  <button class="increment-decrement" id="decreaseR">
+    -
+  </button>
+</div>
+
+<div class="control-group"></div>
+  <label for="phi">Z:</label>
+  <button class="increment-decrement" id="increaseZ">
+    +
+  </button>
+  <button class="increment-decrement" id="decreaseZ">
+    -
+  </button>
+</div>
+
+<br>
+<br>
+<div class="control-group">
+  <label for="lightAmbient">Ambient Light:</label>
+  <input type="color" id="lightAmbient" value="#7F7F7F">
 </div>
 
 <div class="control-group">
-  <label for="diffuseColor">Diffuse Light:</label>
-  <input type="color" id="diffuseColor" value="#ffffff">
+  <label for="lightDiffuse">Diffuse Light:</label>
+  <input type="color" id="lightDiffuse" value="#ffffff">
 </div>
 
 <div class="control-group">
-  <label for="specularColor">Specular Light:</label>
-  <input type="color" id="specularColor" value="#ffffff">
+  <label for="lightSpecular">Specular Light:</label>
+  <input type="color" id="lightSpecular" value="#ffffff">
 </div>
 
 <div class="control-group">
   <label for="lightX">Light Position X:</label>
-  -10 <input type="range" id="lightX" min="-10" max="10" value="1"> 10
+  0.1 <input type="range" id="lightX" min="0.1" max="10" value="1"> 10
 </div>
 
 <div class="control-group">
   <label for="lightY">Light Position Y:</label>
-  -10 <input type="range" id="lightY" min="-10" max="10" value="1"> 10
+  0.1 <input type="range" id="lightY" min="0.1" max="10" value="1"> 10
 </div>
 
 <div class="control-group">
   <label for="lightZ">Light Position Z:</label>
-  -10 <input type="range" id="lightZ" min="-10" max="10" value="1"> 10
+  0.1 <input type="range" id="lightZ" min="0.1" max="10" value="1"> 10
 </div>
 
-<button id="start">Start</button>
-<button id="stop">Stop</button>
+<button class="start-stop" id="start">Start</button>
+<button class="start-stop" id="stop">Stop</button>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+#version 300 es
+
+in vec4 aPosition;
+in vec4 aColor;
+out vec4 vColor;
+
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
+
+void main()
+{
+  gl_Position = uProjectionMatrix * uModelViewMatrix *aPosition;
+  vColor = aColor;
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+#version 300 es
+
+precision mediump float;
+
+in vec4 vColor;
+out vec4 fColor;
+
+void main()
+{
+  fColor = vColor;
+}
+</script>
 
 <script src="initShaders.js"></script>
 <script src="MVnew.js"></script>

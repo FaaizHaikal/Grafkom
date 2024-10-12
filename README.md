@@ -1,7 +1,7 @@
 # ETS-Grafkom
 
 TODO:
-- [ ] Buat opsi bentuk objek (Cube / Sphere)
+- [x] Buat opsi bentuk objek (Cube / Dodecahedron)
 - [ ] Buat opsi gerak (Lurus / Melingkar) + Mekanika Gerak
-- [ ] Buat opsi warna objek
+- [x] Buat opsi near, far, theta, phi, radius
 - [ ] Buat lighting
