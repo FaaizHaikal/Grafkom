@@ -13,7 +13,6 @@ var trajectory = "STRAIGHT";
 var lightAmbient = vec4(0.5, 0.5, 0.5, 1.0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
-
 // Light position
 var lightX = 1.0;
 var lightY = 1.0;
@@ -23,7 +22,7 @@ var lightPosition = vec4(lightX, lightY, lightZ, 0.0);
 var materialAmbient = vec4(1.0, 0.0, 1.0, 1.0);
 var materialDiffuse = vec4(1.0, 0.8, 0.0, 1.0);
 var materialSpecular = vec4(1.0, 0.8, 0.0, 1.0);
-var materialShininess = 20.0;
+var materialShininess = 10.0;
 
 
 var numPositions = 36;
@@ -75,6 +74,8 @@ var radius = 4.0;
 var theta = 0.0;
 var phi = 0.0;
 var dr = 5.0 * Math.PI / 180.0;
+
+var nMatrix, nMatrixLoc;
 
 var modelViewMatrixLoc, projectionMatrixLoc;
 var modelViewMatrix, projectionMatrix;
@@ -302,9 +303,6 @@ function init() {
 
   gl.enable(gl.DEPTH_TEST);
 
-  //
-  //  Load shaders and initialize attribute buffers
-  //
   program = initShaders(gl, "vertex-shader", "fragment-shader");
   gl.useProgram(program);
 
@@ -316,20 +314,19 @@ function init() {
     case "DODECAHEDRON":
       colorDodecahedron();
       projectionMatrix = ortho(-4.0, 4.0, -4.0, 4.0, near, far);
-      
       break;  
   }
 
-  // // // Color Buffer
-  // var cBuffer = gl.createBuffer();
-  // gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  // gl.bufferData(gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW);
+  // Color Buffer
+  var cBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW);
 
-  // var colorLoc = gl.getAttribLocation(program, "aColor");
-  // gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 0, 0);
-  // gl.enableVertexAttribArray(colorLoc);
+  var colorLoc = gl.getAttribLocation(program, "aColor");
+  gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(colorLoc);
 
-  // **Normal Buffer** - New code for normals
+  // Normal Buffer
   var nBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
@@ -347,9 +344,9 @@ function init() {
   gl.vertexAttribPointer(positionLoc, 4, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(positionLoc);
 
-  // Uniforms for model-view and projection matrices
-  // modelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
-  // projectionMatrixLoc = gl.getUniformLocation(program, "uProjectionMatrix");
+  // Uniform locations
+  modelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
+  nMatrixLoc = gl.getUniformLocation(program, "uNormalMatrix");
 
   render();
 }
@@ -364,6 +361,10 @@ function render(){
                radius*Math.cos(theta));
     modelViewMatrix = lookAt(eye, at , up);
 
+    // Calculate and pass the normal matrix
+    nMatrix = normalMatrix(modelViewMatrix, true);
+    gl.uniformMatrix3fv(nMatrixLoc, false, flatten(nMatrix) );
+    
     //
     // projectionMatrix = ortho(-1, 1, -1, 1, -100, 100);
     // projectionMatrix = ortho(-4.0, 4.0, -4.0, 4.0, near, far);
@@ -386,6 +387,7 @@ function render(){
 
     gl.uniformMatrix4fv(gl.getUniformLocation(program,"uModelViewMatrix"), false, flatten(modelViewMatrix));
     gl.uniformMatrix4fv( gl.getUniformLocation(program, "uProjectionMatrix"), false, flatten(projectionMatrix));
+    
     
 
     gl.drawArrays(gl.TRIANGLES, 0, numPositions);
