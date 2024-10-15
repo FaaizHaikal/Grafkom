@@ -92,17 +92,26 @@ function hexToRgb(hex) {
 }
 
 function penta(a, b, c, d, e) {
-  // Define the indices for the pentagonal shape
-  const indices = [a, b, c, a, c, d, a, d, e];
+  // Define the indices for a triangle fan forming the pentagon
+  var indices = [a, b, c, a, c, d, a, d, e];
 
+  // Use existing utility functions to compute the normal vector
+  var t1 = subtract(vertices[b], vertices[a]);  // First edge: from a to b
+  var t2 = subtract(vertices[c], vertices[b]);  // Second edge: from b to c
+  var normal = cross(t1, t2);                   // Compute normal using cross product
+  normal = vec3(normal);                        // Convert to vec3
+  // normal = normalize(normal);                // Uncomment if you need to normalize it
 
-  // Push positions, colors, and normals for each vertex in the pentagon
-  for (const index of indices) {
-    positionsArray.push(vertices[index]);
-    colorsArray.push(vertexColors[colorIndex]);
+  // Loop through indices to push positions, colors, and normals
+  for (var i = 0; i < indices.length; i++) {
+    positionsArray.push(vertices[indices[i]]);  // Push vertex position
+    colorsArray.push(vertexColors[colorIndex]); // Push vertex color
+
+    // Add the normal for each vertex (same normal for the entire face)
+    normalsArray.push(normal);
   }
 
-  // Increment color index for the next shape
+  // Increment color index for the next face
   colorIndex++;
 }
 
@@ -302,16 +311,23 @@ function init() {
   switch (objectShape) {
     case "CUBE":
       colorCube();
+      projectionMatrix = ortho(-1, 1, -1, 1, near, far);
       break;
     case "DODECAHEDRON":
       colorDodecahedron();
-      break;
+      projectionMatrix = ortho(-4.0, 4.0, -4.0, 4.0, near, far);
+      
+      break;  
   }
 
-  // // Color Buffer
+  // // // Color Buffer
   // var cBuffer = gl.createBuffer();
   // gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
   // gl.bufferData(gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW);
+
+  // var colorLoc = gl.getAttribLocation(program, "aColor");
+  // gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 0, 0);
+  // gl.enableVertexAttribArray(colorLoc);
 
   // **Normal Buffer** - New code for normals
   var nBuffer = gl.createBuffer();
@@ -322,10 +338,6 @@ function init() {
   gl.vertexAttribPointer(normalLoc, 3, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(normalLoc);
 
-  // var colorLoc = gl.getAttribLocation(program, "aColor");
-  // gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 0, 0);
-  // gl.enableVertexAttribArray(colorLoc);
-
   // Position Buffer
   var vBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -335,10 +347,9 @@ function init() {
   gl.vertexAttribPointer(positionLoc, 4, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(positionLoc);
 
-
   // Uniforms for model-view and projection matrices
-  modelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
-  projectionMatrixLoc = gl.getUniformLocation(program, "uProjectionMatrix");
+  // modelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
+  // projectionMatrixLoc = gl.getUniformLocation(program, "uProjectionMatrix");
 
   render();
 }
@@ -352,10 +363,10 @@ function render(){
                radius*Math.sin(theta)*Math.sin(phi), 
                radius*Math.cos(theta));
     modelViewMatrix = lookAt(eye, at , up);
-    projectionMatrix = ortho(-4.0, 4.0, -4.0, 4.0, near, far);
 
-    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-    gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
+    //
+    // projectionMatrix = ortho(-1, 1, -1, 1, -100, 100);
+    // projectionMatrix = ortho(-4.0, 4.0, -4.0, 4.0, near, far);
 
       // Set the lighting and material properties
     var ambientProduct = mult(lightAmbient, materialAmbient);
@@ -368,6 +379,13 @@ function render(){
     gl.uniform4fv(gl.getUniformLocation(program, "uSpecularProduct"), flatten(specularProduct));
     gl.uniform4fv(gl.getUniformLocation(program, "uLightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "uShininess"), materialShininess);
+
+    // modelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
+    // gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
+    // gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
+
+    gl.uniformMatrix4fv(gl.getUniformLocation(program,"uModelViewMatrix"), false, flatten(modelViewMatrix));
+    gl.uniformMatrix4fv( gl.getUniformLocation(program, "uProjectionMatrix"), false, flatten(projectionMatrix));
     
 
     gl.drawArrays(gl.TRIANGLES, 0, numPositions);
