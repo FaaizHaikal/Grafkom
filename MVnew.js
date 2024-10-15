@@ -9,6 +9,16 @@
 //
 // Helper Functions
 //
+
+function hexToVec4(hex) {
+  // Convert hex color (e.g., "#ff0000") to vec4(r, g, b, 1.0)
+  var bigint = parseInt(hex.slice(1), 16);
+  var r = ((bigint >> 16) & 255) / 255.0;
+  var g = ((bigint >> 8) & 255) / 255.0;
+  var b = (bigint & 255) / 255.0;
+  return vec4(r, g, b, 1.0); // Return as vec4
+}
+
 function MVbuffer(size) {
   var b = {};
   b.buf = new Float32Array(size);

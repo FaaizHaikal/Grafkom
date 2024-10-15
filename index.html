@@ -5,6 +5,10 @@
 <title>ETS Grafkom</title>
 <style>
   body {
+    background-color: #121212; /* Dark background */
+    color: #ffffff; /* Light text */
+    font-family: Arial, sans-serif;
+    padding: 0;
     font-family: Arial, sans-serif;
     margin: 20px;
   }
@@ -12,6 +16,7 @@
     display: block;
     margin: 0 auto;
     border: 1px solid #000;
+    border-radius: 10px;
   }
   .control-group {
     margin-bottom: 15px;
@@ -30,6 +35,8 @@
     margin-top: 20px;
     padding: 10px 20px;
     font-size: 16px;
+    border: 1px solid #000;
+    border-radius: 5px;
   }
 
   .increment-decrement {
@@ -115,6 +122,7 @@
 
 <br>
 <br>
+<!-- Lighting Stuff Happening Here -->
 <div class="control-group">
   <label for="lightAmbient">Ambient Light:</label>
   <input type="color" id="lightAmbient" value="#7F7F7F">
@@ -132,17 +140,17 @@
 
 <div class="control-group">
   <label for="lightX">Light Position X:</label>
-  0.1 <input type="range" id="lightX" min="0.1" max="10" value="1"> 10
+  0.1 <input type="range" id="lightX" min="0.1" max="10" value="0.1"> 10
 </div>
 
 <div class="control-group">
   <label for="lightY">Light Position Y:</label>
-  0.1 <input type="range" id="lightY" min="0.1" max="10" value="1"> 10
+  0.1 <input type="range" id="lightY" min="0.1" max="10" value="0.1"> 10
 </div>
 
 <div class="control-group">
   <label for="lightZ">Light Position Z:</label>
-  0.1 <input type="range" id="lightZ" min="0.1" max="10" value="1"> 10
+  0.1 <input type="range" id="lightZ" min="0.1" max="10" value="0.1"> 10
 </div>
 
 <button class="start-stop" id="start">Start</button>
@@ -153,31 +161,85 @@
 
 in vec4 aPosition;
 in vec4 aColor;
-out vec4 vColor;
+in vec4 aNormal;
 
+out vec4 vColor;
+out vec3 vN, vL, vE;
+
+uniform vec4 uLightPosition;
 uniform mat4 uModelViewMatrix;
 uniform mat4 uProjectionMatrix;
 
 void main()
 {
-  gl_Position = uProjectionMatrix * uModelViewMatrix *aPosition;
-  vColor = aColor;
+    // Transform the position to eye space
+    vec3 pos = -(uModelViewMatrix * aPosition).xyz;
+
+    // Light vector (from the vertex to the light source)
+    vec3 light = uLightPosition.xyz;
+    vL = normalize(light - pos);
+
+    // Eye vector (from the vertex to the camera/eye)
+    vE = normalize(-pos);
+
+    // Normal vector transformed to eye space
+    vN = normalize((uModelViewMatrix * aNormal).xyz);
+
+    // Compute the final position in clip space
+    gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
+
+    // Pass through the color
+    vColor = aColor;
 }
 </script>
 
 <script id="fragment-shader" type="x-shader/x-fragment">
-#version 300 es
-
-precision mediump float;
-
-in vec4 vColor;
-out vec4 fColor;
-
-void main()
-{
-  fColor = vColor;
-}
-</script>
+  #version 300 es
+  
+  precision mediump float;
+  
+  in vec4 vColor;        // Vertex color passed from vertex shader
+  in vec3 vN, vL, vE;    // Normal, Light, and Eye vectors
+  
+  out vec4 fColor;       // Final fragment color output
+  
+  uniform vec4 uAmbientProduct;    // Ambient light color
+  uniform vec4 uDiffuseProduct;    // Diffuse light color
+  uniform vec4 uSpecularProduct;   // Specular light color
+  uniform float uShininess;        // Shininess coefficient for specular highlights
+  
+  void main()
+  {
+      // Normalize the vectors
+      vec3 N = normalize(vN);    // Normalized normal vector
+      vec3 L = normalize(vL);    // Normalized light vector
+      vec3 E = normalize(vE);    // Normalized eye vector
+  
+      // Compute the halfway vector for specular calculation
+      vec3 H = normalize(L + E); 
+  
+      // Ambient component
+      vec4 ambient = uAmbientProduct;
+  
+      // Diffuse component (Lambert's cosine law)
+      float Kd = max(dot(N, L), 0.0);
+      vec4 diffuse = Kd * uDiffuseProduct;
+  
+      // Specular component (Blinn-Phong reflection model)
+      float Ks = pow(max(dot(N, H), 0.0), uShininess);
+      vec4 specular = Ks * uSpecularProduct;
+  
+      // If the light is behind the surface, remove specular highlights
+      if (dot(L, N) < 0.0) {
+          specular = vec4(0.0, 0.0, 0.0, 1.0);
+      }
+  
+      // Combine all components to get the final color
+      fColor = ambient + diffuse + specular;
+      fColor.a = 1.0;  // Set alpha to 1.0 for full opacity
+  }
+  </script>
+  
 
 <script src="initShaders.js"></script>
 <script src="MVnew.js"></script>

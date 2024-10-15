@@ -1,5 +1,7 @@
 "use strict";
 
+var program;
+
 // Default values
 var objectShape = "CUBE";
 var objectMass = 1.0;
@@ -7,10 +9,22 @@ var objectMass = 1.0;
 var appliedForce = 1.0;
 var trajectory = "STRAIGHT";
 
+// Phong lighting properties
 var lightAmbient = vec4(0.5, 0.5, 0.5, 1.0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
-var lightPosition = vec4(1.0, 1.0, 1.0, 0.0);
+
+// Light position
+var lightX = 1.0;
+var lightY = 1.0;
+var lightZ = 1.0;
+var lightPosition = vec4(lightX, lightY, lightZ, 0.0);
+
+var materialAmbient = vec4(1.0, 0.0, 1.0, 1.0);
+var materialDiffuse = vec4(1.0, 0.8, 0.0, 1.0);
+var materialSpecular = vec4(1.0, 0.8, 0.0, 1.0);
+var materialShininess = 20.0;
+
 
 var numPositions = 36;
 var vertices = [
@@ -46,12 +60,14 @@ var vertexColors = [
   vec4(0.25, 0.25, 0.25, 1.0), // Dark Gray
   vec4(0.5, 0.5, 0.5, 1.0)   // Gray
 ];
+
 var colorIndex = 0;
 
 var gl;
 var canvas;
 var positionsArray = [];
 var colorsArray = [];
+var normalsArray = [];
 
 var near = 0.3;
 var far = 30.0;
@@ -66,6 +82,7 @@ var eye;
 const at = vec3(0.0, 0.0, 0.0);
 const up = vec3(0.0, 1.0, 0.0);
 
+
 function hexToRgb(hex) {
   var r = parseInt(hex.slice(1, 3), 16) / 255;
   var g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -75,26 +92,41 @@ function hexToRgb(hex) {
 }
 
 function penta(a, b, c, d, e) {
+  // Define the indices for the pentagonal shape
   const indices = [a, b, c, a, c, d, a, d, e];
 
-  for (let i = 0; i < indices.length; i++) {
-    positionsArray.push(vertices[indices[i]]);
+
+  // Push positions, colors, and normals for each vertex in the pentagon
+  for (const index of indices) {
+    positionsArray.push(vertices[index]);
     colorsArray.push(vertexColors[colorIndex]);
   }
 
+  // Increment color index for the next shape
   colorIndex++;
 }
 
 function quad(a, b, c, d) {
   var indices = [a, b, c, a, c, d];
 
+  // Use existing utility functions to compute the normal vector
+  var t1 = subtract(vertices[b], vertices[a]);
+  var t2 = subtract(vertices[c], vertices[b]);
+  var normal = cross(t1, t2);  // Compute normal using cross product and normalize
+  normal = vec3(normal);
+  // normal = normalize(normal);
+
   for (var i = 0; i < indices.length; i++) {
     positionsArray.push(vertices[indices[i]]);
     colorsArray.push(vertexColors[colorIndex]);
+
+    // Add normal for each vertex
+    normalsArray.push(normal);
   }
 
   colorIndex++;
 }
+
 
 function colorDodecahedron()
 {
@@ -116,7 +148,6 @@ function colorDodecahedron()
 
 function colorCube()
 {
-  colorIndex = 0;
   quad(1, 0, 3, 2);
   quad(2, 3, 7, 6);
   quad(3, 0, 4, 7);
@@ -214,7 +245,42 @@ function initializeInputListeners() {
     near *= 0.9;
     far *= 0.9;
   });
+   // Lighting control - Real-time updates
+   document.getElementById("lightAmbient").addEventListener("input", function() {
+    lightAmbient = hexToVec4(this.value);
+  });
+
+  document.getElementById("lightDiffuse").addEventListener("input", function() {
+    lightDiffuse = hexToVec4(this.value);
+  });
+
+  document.getElementById("lightSpecular").addEventListener("input", function() {
+    lightSpecular = hexToVec4(this.value);
+  });
+
+  // Light Position control
+  document.getElementById("lightX").addEventListener("input", function() {
+    lightX = parseFloat(this.value);
+    updateLightPosition();
+  });
+
+  document.getElementById("lightY").addEventListener("input", function() {
+    lightY = parseFloat(this.value);
+    updateLightPosition();
+  });
+
+  document.getElementById("lightZ").addEventListener("input", function() {
+    lightZ = parseFloat(this.value);
+    updateLightPosition();
+  });
+
+  function updateLightPosition() {
+    lightPosition = vec4(lightX, lightY, lightZ, 1.0);
+  }
+
 }
+
+
 
 function init() {
   canvas = document.getElementById("gl-canvas");
@@ -230,7 +296,7 @@ function init() {
   //
   //  Load shaders and initialize attribute buffers
   //
-  var program = initShaders(gl, "vertex-shader", "fragment-shader");
+  program = initShaders(gl, "vertex-shader", "fragment-shader");
   gl.useProgram(program);
 
   switch (objectShape) {
@@ -242,14 +308,25 @@ function init() {
       break;
   }
 
-  var cBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW);
+  // // Color Buffer
+  // var cBuffer = gl.createBuffer();
+  // gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+  // gl.bufferData(gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW);
 
-  var colorLoc = gl.getAttribLocation(program, "aColor");
-  gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(colorLoc);
+  // **Normal Buffer** - New code for normals
+  var nBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
 
+  var normalLoc = gl.getAttribLocation(program, "aNormal");
+  gl.vertexAttribPointer(normalLoc, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(normalLoc);
+
+  // var colorLoc = gl.getAttribLocation(program, "aColor");
+  // gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 0, 0);
+  // gl.enableVertexAttribArray(colorLoc);
+
+  // Position Buffer
   var vBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, flatten(positionsArray), gl.STATIC_DRAW);
@@ -258,11 +335,14 @@ function init() {
   gl.vertexAttribPointer(positionLoc, 4, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(positionLoc);
 
+
+  // Uniforms for model-view and projection matrices
   modelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
   projectionMatrixLoc = gl.getUniformLocation(program, "uProjectionMatrix");
 
   render();
 }
+
 
 function render(){
   setTimeout( function() {
@@ -277,13 +357,24 @@ function render(){
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
 
+      // Set the lighting and material properties
+    var ambientProduct = mult(lightAmbient, materialAmbient);
+    var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    var specularProduct = mult(lightSpecular, materialSpecular);
+
+    // Send the lighting and material properties to the shader program
+    gl.uniform4fv(gl.getUniformLocation(program, "uAmbientProduct"), flatten(ambientProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "uDiffuseProduct"), flatten(diffuseProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "uSpecularProduct"), flatten(specularProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "uLightPosition"), flatten(lightPosition));
+    gl.uniform1f(gl.getUniformLocation(program, "uShininess"), materialShininess);
+    
+
     gl.drawArrays(gl.TRIANGLES, 0, numPositions);
 
     requestAnimationFrame(render);
   }, 60);
 }
-
-
 
 initializeInputListeners();
 init();
