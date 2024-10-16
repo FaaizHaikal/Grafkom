@@ -82,21 +82,24 @@ var nMatrix, nMatrixLoc;
 
 var modelViewMatrix, projectionMatrix;
 
+var cubeSize = 16;
+var dodecahedronSize = 32;
+
 var eye;
 const at = vec3(0.0, 0.0, 0.0);
 const up = vec3(0.0, 1.0, 0.0);
 
-var translation = vec4(-15.0, 0.0, 0.0, 1.0);
+var translation = vec4(0.0, 0.0, 0.0, 1.0);
 
 function resetTranslation() {
   switch (objectShape) {
     case "CUBE":
       switch (trajectory) {
         case "PARABOLA":
-          translation = vec4(-15.0, -4.2, 0.0, 1.0);
+          translation = vec4(-cubeSize + 1, -cubeSize / 4.0 - 0.2, 0.0, 1.0);
           break;
         case "STRAIGHT":
-          translation = vec4(-15.0, 0.0, 0.0, 1.0);
+          translation = vec4(-cubeSize + 1, 0.0, 0.0, 1.0);
           break;
       }
 
@@ -104,10 +107,10 @@ function resetTranslation() {
     case "DODECAHEDRON":
       switch (trajectory) {
         case "PARABOLA":
-          translation = vec4(-30.0, -6.8, 0.0, 1.0);
+          translation = vec4(-dodecahedronSize + 2, -dodecahedronSize / 4 + 1.2, 0.0, 1.0);
           break;
         case "STRAIGHT":
-          translation = vec4(-30.0, 0.0, 0.0, 1.0);
+          translation = vec4(-dodecahedronSize + 2, 0.0, 0.0, 1.0);
           break;
       }
       break;
@@ -119,12 +122,12 @@ function resetTranslation() {
 function objectOut() {
   if (objectShape === "CUBE") {
     return (
-      Math.abs(translation[0]) >= 15.0 || Math.abs(translation[1]) >= 4.2
+      Math.abs(translation[0]) >= cubeSize - 1 || Math.abs(translation[1]) >= cubeSize / 4.0 + 0.2
     );
   }
 
   return (
-    Math.abs(translation[0]) >= 30.0 || Math.abs(translation[1]) >= 6.8
+    Math.abs(translation[0]) >= dodecahedronSize - 2 || Math.abs(translation[1]) >= dodecahedronSize / 4.0 + 1.2
   );
 }
 
@@ -279,6 +282,31 @@ function initializeInputListeners() {
     resetTranslation();
   };
 
+  document.getElementById("objectSize").oninput = function () {
+    var value = parseFloat(this.value);
+    if (value < 5) {
+      value = 1 + (5 - value) / 5;
+    } else {
+      value = 1 - (value - 5) / 5;
+    }
+
+    if (value === 0) {
+      value = 0.1;
+    }
+    switch (objectShape) {
+      case "CUBE":
+        cubeSize = 16 * value;
+        projectionMatrix = ortho(-cubeSize, cubeSize, -cubeSize / aspect, cubeSize / aspect, near, far);
+        break;
+      case "DODECAHEDRON":
+        dodecahedronSize = 32 * value;
+        projectionMatrix = ortho(-dodecahedronSize, dodecahedronSize, -dodecahedronSize / aspect, dodecahedronSize / aspect, near, far);
+        break;
+    }
+
+    resetTranslation();
+  }
+
   document.getElementById("autoRotate").onclick = function () {
     autoRotate = this.checked;
     document.getElementById("increaseTheta").disabled = this.checked;
@@ -396,12 +424,12 @@ function init() {
     case "CUBE":
       normalsArray = [];
       colorCube();
-      projectionMatrix = ortho(-16, 16, -16 / aspect, 16 / aspect, near, far);
+      projectionMatrix = ortho(-cubeSize, cubeSize, -cubeSize / aspect, cubeSize / aspect, near, far);
       break;
     case "DODECAHEDRON":
       normalsArray = [];
       colorDodecahedron();
-      projectionMatrix = ortho(-32, 32, -32 / aspect, 32 / aspect, near, far);
+      projectionMatrix = ortho(-dodecahedronSize, dodecahedronSize, -dodecahedronSize / aspect, dodecahedronSize / aspect, near, far);
       break;
   }
 
