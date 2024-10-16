@@ -3,11 +3,14 @@ var program;
 
 // Default values
 var objectShape = "CUBE";
-var objectMass = 100.0;
+var objectMass = 500.0;
 
 var animateForce = false;
+var throwAngle = 60.0;
+var velocity = 5.0;
 var appliedForce = 1.0;
 var trajectory = "STRAIGHT";
+var autoRotate = false;
 
 // Phong lighting properties
 var lightAmbient = vec4(0.5, 0.5, 0.5, 1.0);
@@ -24,32 +27,31 @@ var materialDiffuse = vec4(1.0, 0.8, 0.0, 1.0);
 var materialSpecular = vec4(1.0, 0.8, 0.0, 1.0);
 var materialShininess = 10.0;
 
-
 var numPositions = 36;
 var vertices = [
-  vec4(-0.5, -0.5,  0.5, 1.0),
-  vec4(-0.5,  0.5,  0.5, 1.0),
-  vec4(0.5,  0.5,  0.5, 1.0),
-  vec4(0.5, -0.5,  0.5, 1.0),
+  vec4(-0.5, -0.5, 0.5, 1.0),
+  vec4(-0.5, 0.5, 0.5, 1.0),
+  vec4(0.5, 0.5, 0.5, 1.0),
+  vec4(0.5, -0.5, 0.5, 1.0),
   vec4(-0.5, -0.5, -0.5, 1.0),
-  vec4(-0.5,  0.5, -0.5, 1.0),
-  vec4(0.5,  0.5, -0.5, 1.0),
-  vec4(0.5, -0.5, -0.5, 1.0)
+  vec4(-0.5, 0.5, -0.5, 1.0),
+  vec4(0.5, 0.5, -0.5, 1.0),
+  vec4(0.5, -0.5, -0.5, 1.0),
 ];
 
 var vertexColors = [
-  vec4(1.0, 0.0, 0.0, 1.0),  // Red
-  vec4(0.0, 1.0, 0.0, 1.0),  // Green
-  vec4(0.0, 0.0, 1.0, 1.0),  // Blue
-  vec4(1.0, 1.0, 0.0, 1.0),  // Yellow
-  vec4(1.0, 0.0, 1.0, 1.0),  // Magenta
-  vec4(0.0, 1.0, 1.0, 1.0),  // Cyan
-  vec4(0.5, 0.0, 0.0, 1.0),  // Dark Red
-  vec4(0.0, 0.5, 0.0, 1.0),  // Dark Green
-  vec4(0.0, 0.0, 0.5, 1.0),  // Dark Blue
-  vec4(0.5, 0.5, 0.0, 1.0),  // Olive
-  vec4(0.5, 0.0, 0.5, 1.0),  // Purple
-  vec4(0.0, 0.5, 0.5, 1.0),  // Teal
+  vec4(1.0, 0.0, 0.0, 1.0), // Red
+  vec4(0.0, 1.0, 0.0, 1.0), // Green
+  vec4(0.0, 0.0, 1.0, 1.0), // Blue
+  vec4(1.0, 1.0, 0.0, 1.0), // Yellow
+  vec4(1.0, 0.0, 1.0, 1.0), // Magenta
+  vec4(0.0, 1.0, 1.0, 1.0), // Cyan
+  vec4(0.5, 0.0, 0.0, 1.0), // Dark Red
+  vec4(0.0, 0.5, 0.0, 1.0), // Dark Green
+  vec4(0.0, 0.0, 0.5, 1.0), // Dark Blue
+  vec4(0.5, 0.5, 0.0, 1.0), // Olive
+  vec4(0.5, 0.0, 0.5, 1.0), // Purple
+  vec4(0.0, 0.5, 0.5, 1.0), // Teal
   vec4(0.75, 0.25, 0.0, 1.0), // Brown
   vec4(0.25, 0.75, 0.0, 1.0), // Lime
   vec4(0.0, 0.25, 0.75, 1.0), // Sky Blue
@@ -57,13 +59,13 @@ var vertexColors = [
   vec4(0.25, 0.0, 0.75, 1.0), // Indigo
   vec4(0.75, 0.75, 0.75, 1.0), // Light Gray
   vec4(0.25, 0.25, 0.25, 1.0), // Dark Gray
-  vec4(0.5, 0.5, 0.5, 1.0)   // Gray
+  vec4(0.5, 0.5, 0.5, 1.0), // Gray
 ];
 
 var colorIndex = 0;
 
 var gl;
-var canvas = document.getElementById("gl-canvas");;
+var canvas = document.getElementById("gl-canvas");
 var positionsArray = [];
 var colorsArray = [];
 var normalsArray = [];
@@ -74,7 +76,7 @@ var aspect = canvas.width / canvas.height;
 var radius = 4.0;
 var theta = 0.0;
 var phi = 0.0;
-var dr = 5.0 * Math.PI / 180.0;
+var dr = (5.0 * Math.PI) / 180.0;
 
 var nMatrix, nMatrixLoc;
 
@@ -89,14 +91,41 @@ var translation = vec4(-15.0, 0.0, 0.0, 1.0);
 function resetTranslation() {
   switch (objectShape) {
     case "CUBE":
-      translation = vec4(-15.0, 0.0, 0.0, 1.0);
+      switch (trajectory) {
+        case "PARABOLA":
+          translation = vec4(-15.0, -4.2, 0.0, 1.0);
+          break;
+        case "STRAIGHT":
+          translation = vec4(-15.0, 0.0, 0.0, 1.0);
+          break;
+      }
+
       break;
     case "DODECAHEDRON":
-      translation = vec4(-30.0, 0.0, 0.0, 1.0);
+      switch (trajectory) {
+        case "PARABOLA":
+          translation = vec4(-30.0, -6.8, 0.0, 1.0);
+          break;
+        case "STRAIGHT":
+          translation = vec4(-30.0, 0.0, 0.0, 1.0);
+          break;
+      }
       break;
   }
 
   initialStart = true;
+}
+
+function objectOut() {
+  if (objectShape === "CUBE") {
+    return (
+      Math.abs(translation[0]) >= 15.0 || Math.abs(translation[1]) >= 4.2
+    );
+  }
+
+  return (
+    Math.abs(translation[0]) >= 30.0 || Math.abs(translation[1]) >= 6.8
+  );
 }
 
 var startTime = 0;
@@ -114,17 +143,17 @@ function penta(a, b, c, d, e) {
   var indices = [a, b, c, a, c, d, a, d, e];
 
   // Compute two edge vectors of the pentagon to calculate the normal
-  var t1 = subtract(vertices[b], vertices[a]);  // First edge: a -> b
-  var t2 = subtract(vertices[c], vertices[a]);  // Second edge: a -> c
-  
+  var t1 = subtract(vertices[b], vertices[a]); // First edge: a -> b
+  var t2 = subtract(vertices[c], vertices[a]); // Second edge: a -> c
+
   // Calculate the normal of the face using the cross product
   var normal = cross(t1, t2);
-  normal = vec3(normal);  // Convert to vec3
+  normal = vec3(normal); // Convert to vec3
   // normal = normalize(normal); // Uncomment if you need to normalize it
 
   // Loop through indices to push positions, colors, and normals
   for (var i = 0; i < indices.length; i++) {
-    positionsArray.push(vertices[indices[i]]);  // Push vertex position
+    positionsArray.push(vertices[indices[i]]); // Push vertex position
     colorsArray.push(vertexColors[colorIndex]); // Push vertex color
 
     // Add the normal for each vertex (same normal for the entire face)
@@ -134,7 +163,6 @@ function penta(a, b, c, d, e) {
   // Increment color index for the next face
   colorIndex++;
 }
-
 
 function quad(a, b, c, d) {
   var indices = [a, b, c, a, c, d];
@@ -155,9 +183,7 @@ function quad(a, b, c, d) {
   colorIndex++;
 }
 
-
-function colorDodecahedron()
-{
+function colorDodecahedron() {
   colorIndex = 0;
 
   penta(0, 16, 2, 10, 8);
@@ -174,8 +200,7 @@ function colorDodecahedron()
   penta(15, 7, 19, 18, 6);
 }
 
-function colorCube()
-{
+function colorCube() {
   quad(1, 0, 3, 2);
   quad(2, 3, 7, 6);
   quad(3, 0, 4, 7);
@@ -185,27 +210,27 @@ function colorCube()
 }
 
 function initializeInputListeners() {
-  document.getElementById("objectOptions").addEventListener("click", function() {
+  document.getElementById("objectOptions").onclick = function () {
     objectShape = this.value;
 
     switch (objectShape) {
       case "CUBE":
         numPositions = 36;
         vertices = [
-          vec4(-0.5, -0.5,  0.5, 1.0),
-          vec4(-0.5,  0.5,  0.5, 1.0),
-          vec4(0.5,  0.5,  0.5, 1.0),
-          vec4(0.5, -0.5,  0.5, 1.0),
+          vec4(-0.5, -0.5, 0.5, 1.0),
+          vec4(-0.5, 0.5, 0.5, 1.0),
+          vec4(0.5, 0.5, 0.5, 1.0),
+          vec4(0.5, -0.5, 0.5, 1.0),
           vec4(-0.5, -0.5, -0.5, 1.0),
-          vec4(-0.5,  0.5, -0.5, 1.0),
-          vec4(0.5,  0.5, -0.5, 1.0),
-          vec4(0.5, -0.5, -0.5, 1.0)
-       ];
+          vec4(-0.5, 0.5, -0.5, 1.0),
+          vec4(0.5, 0.5, -0.5, 1.0),
+          vec4(0.5, -0.5, -0.5, 1.0),
+        ];
 
         break;
       case "DODECAHEDRON":
         numPositions = 108;
-        
+
         const A = (1 + Math.sqrt(5)) / 2; // The golden ratio
         const B = 1 / A;
         vertices = [
@@ -228,9 +253,9 @@ function initializeInputListeners() {
           vec4(A, 0, B, 1.0),
           vec4(A, 0, -B, 1.0),
           vec4(-A, 0, B, 1.0),
-          vec4(-A, 0, -B, 1.0)
+          vec4(-A, 0, -B, 1.0),
         ];
-        
+
         break;
     }
 
@@ -238,95 +263,130 @@ function initializeInputListeners() {
     colorsArray = [];
 
     init();
-  });
+  };
 
-  document.getElementById("increaseTheta").addEventListener("click", function() {
+  document.getElementById("trajectoryOptions").onclick = function () {
+    trajectory = this.value;
+
+    if (trajectory === "PARABOLA") {
+      document.getElementById("parabola-control").classList.remove("hidden");
+      document.getElementById("straight-control").classList.add("hidden");
+    } else {
+      document.getElementById("parabola-control").classList.add("hidden");
+      document.getElementById("straight-control").classList.remove("hidden");
+    }
+
+    resetTranslation();
+  };
+
+  document.getElementById("autoRotate").onclick = function () {
+    if (this.checked) {
+
+    }
+
+
+    autoRotate = this.checked;
+    document.getElementById("increaseTheta").disabled = this.checked;
+    document.getElementById("decreaseTheta").disabled = this.checked;
+    document.getElementById("increasePhi").disabled = this.checked;
+    document.getElementById("decreasePhi").disabled = this.checked;
+  };
+
+  document.getElementById("increaseTheta").onclick = function () {
     theta += dr;
-  });
+  };
 
-  document.getElementById("decreaseTheta").addEventListener("click", function() {
+  document.getElementById("decreaseTheta").onclick = function () {
     theta -= dr;
-  });
+  };
 
-  document.getElementById("increasePhi").addEventListener("click", function() {
+  document.getElementById("increasePhi").onclick = function () {
     phi += dr;
-  });
+  };
 
-  document.getElementById("decreasePhi").addEventListener("click", function() {
+  document.getElementById("decreasePhi").onclick = function () {
     phi -= dr;
-  });
+  };
 
-  document.getElementById("increaseR").addEventListener("click", function() {
+  document.getElementById("increaseR").onclick = function () {
     radius *= 2.0;
-  });
+  };
 
-  document.getElementById("decreaseR").addEventListener("click", function() {
+  document.getElementById("decreaseR").onclick = function () {
     radius *= 0.5;
-  });
+  };
 
-  document.getElementById("increaseZ").addEventListener("click", function() {
+  document.getElementById("increaseZ").onclick = function () {
     near *= 1.1;
     far *= 1.1;
-  });
+  };
 
-  document.getElementById("decreaseZ").addEventListener("click", function() {
+  document.getElementById("decreaseZ").onclick = function () {
     near *= 0.9;
     far *= 0.9;
-  });
-   // Lighting control - Real-time updates
-   document.getElementById("lightAmbient").addEventListener("input", function() {
+  };
+
+  // Lighting control - Real-time updates
+  document.getElementById("lightAmbient").oninput = function () {
     lightAmbient = hexToVec4(this.value);
-  });
+  };
 
-  document.getElementById("lightDiffuse").addEventListener("input", function() {
+  document.getElementById("lightDiffuse").oninput = function () {
     lightDiffuse = hexToVec4(this.value);
-  });
+  };
 
-  document.getElementById("lightSpecular").addEventListener("input", function() {
+  document.getElementById("lightSpecular").oninput = function () {
     lightSpecular = hexToVec4(this.value);
-  });
+  };
 
   // Light Position control
-  document.getElementById("lightX").addEventListener("input", function() {
+  document.getElementById("lightX").oninput = function () {
     lightX = parseFloat(this.value);
     updateLightPosition();
-  });
+  };
 
-  document.getElementById("lightY").addEventListener("input", function() {
+  document.getElementById("lightY").oninput = function () {
     lightY = parseFloat(this.value);
     updateLightPosition();
-  });
+  };
 
-  document.getElementById("lightZ").addEventListener("input", function() {
+  document.getElementById("lightZ").oninput = function () {
     lightZ = parseFloat(this.value);
     updateLightPosition();
-  });
+  };
 
   function updateLightPosition() {
     lightPosition = vec4(lightX, lightY, lightZ, 1.0);
   }
 
-  document.getElementById("force").addEventListener("input", function() {
+  document.getElementById("force").oninput = function () {
     appliedForce = parseFloat(this.value);
-  });
+  };
 
-  document.getElementById("objectMass").addEventListener("input", function() {
+  document.getElementById("throwAngle").oninput = function () {
+    throwAngle = parseFloat(this.value);
+  };
+
+  document.getElementById("velocity").oninput = function () {
+    velocity = parseFloat(this.value);
+  };
+
+  document.getElementById("objectMass").oninput = function () {
     objectMass = parseFloat(this.value);
-  });
+  };
 
-  document.getElementById("start").addEventListener("click", function() {
+  document.getElementById("start").onclick = function () {
     animateForce = true;
-  });
+  };
 
-  document.getElementById("stop").addEventListener("click", function() {
+  document.getElementById("stop").onclick = function () {
     animateForce = false;
-
     resetTranslation();
-  });
+  };
 }
 
 function init() {
-  gl = canvas.getContext('webgl2');
+  gl = canvas.getContext("webgl2");
   if (!gl) alert("WebGL 2.0 isn't available");
 
   gl.viewport(0, 0, canvas.width, canvas.height);
@@ -347,7 +407,7 @@ function init() {
       normalsArray = [];
       colorDodecahedron();
       projectionMatrix = ortho(-32, 32, -32 / aspect, 32 / aspect, near, far);
-      break;  
+      break;
   }
 
   // Color Buffer
@@ -384,54 +444,115 @@ function init() {
   animate(0);
 }
 
-function animate(time) {
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function autoRotateObject() {
+  var random = Math.random() * 0.1;
+
+  theta += random * dr;
+  phi = Math.PI / 4;
+}
+
+function updatePosition(time) {
   if (initialStart) {
     startTime = time;
     initialStart = false;
+
+    return;
   }
 
-  var dt = time - startTime;
+  var dt = (time - startTime);
 
+  if (objectOut()) {
+    resetTranslation();
+  }
+
+  switch (trajectory) {
+    case "STRAIGHT":
+      var acceleration = appliedForce / objectMass;
+      acceleration /= 10000;
+
+      translation[0] += 0.5 * acceleration * dt * dt;
+
+      break;
+    case "PARABOLA":
+      const GRAVITY = 0.005; // Adjusted gravity constant
+
+      var x = velocity * Math.cos((throwAngle * Math.PI) / 180) * dt;
+      var y = (velocity * Math.sin((throwAngle * Math.PI) / 180) - GRAVITY * dt) * dt;
+
+      translation[0] += x / 10000;
+      translation[1] += y / 10000;
+
+      break;
+  }
+}
+
+function animate(time) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  eye = vec3(radius*Math.sin(theta)*Math.cos(phi),
-             radius*Math.sin(theta)*Math.sin(phi), 
-             radius*Math.cos(theta));
-  modelViewMatrix = lookAt(eye, at , up);
+  eye = vec3(
+    radius * Math.sin(theta) * Math.cos(phi),
+    radius * Math.sin(theta) * Math.sin(phi),
+    radius * Math.cos(theta)
+  );
+  modelViewMatrix = lookAt(eye, at, up);
 
   // Calculate and pass the normal matrix
   nMatrix = normalMatrix(modelViewMatrix, true);
-  gl.uniformMatrix3fv(nMatrixLoc, false, flatten(nMatrix) );
-  
+  gl.uniformMatrix3fv(nMatrixLoc, false, flatten(nMatrix));
+
   // Set the lighting and material properties
   var ambientProduct = mult(lightAmbient, materialAmbient);
   var diffuseProduct = mult(lightDiffuse, materialDiffuse);
   var specularProduct = mult(lightSpecular, materialSpecular);
 
   if (animateForce) {
-    var finished = (objectShape === "CUBE" && translation[0] >= 15.0) || (objectShape === "DODECAHEDRON" && translation[0] >= 30.0);
-
-    if (finished) {
-      resetTranslation();
-    }
-
-    var acceleration = appliedForce / objectMass;
-    acceleration /= 100000;
-    translation[0] += 0.5 * acceleration * dt * dt;
+    updatePosition(time);
   }
 
-  var translationMatrix = translate(translation[0], translation[1], translation[2]);
+  if (autoRotate) {
+    autoRotateObject();
+  }
+
+  var translationMatrix = translate(
+    translation[0],
+    translation[1],
+    translation[2]
+  );
   modelViewMatrix = mult(translationMatrix, modelViewMatrix);
 
   // Send the lighting and material properties to the shader program
-  gl.uniform4fv(gl.getUniformLocation(program, "uAmbientProduct"), flatten(ambientProduct));
-  gl.uniform4fv(gl.getUniformLocation(program, "uDiffuseProduct"), flatten(diffuseProduct));
-  gl.uniform4fv(gl.getUniformLocation(program, "uSpecularProduct"), flatten(specularProduct));
-  gl.uniform4fv(gl.getUniformLocation(program, "uLightPosition"), flatten(lightPosition));
+  gl.uniform4fv(
+    gl.getUniformLocation(program, "uAmbientProduct"),
+    flatten(ambientProduct)
+  );
+  gl.uniform4fv(
+    gl.getUniformLocation(program, "uDiffuseProduct"),
+    flatten(diffuseProduct)
+  );
+  gl.uniform4fv(
+    gl.getUniformLocation(program, "uSpecularProduct"),
+    flatten(specularProduct)
+  );
+  gl.uniform4fv(
+    gl.getUniformLocation(program, "uLightPosition"),
+    flatten(lightPosition)
+  );
   gl.uniform1f(gl.getUniformLocation(program, "uShininess"), materialShininess);
 
-  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uModelViewMatrix"), false, flatten(modelViewMatrix));
-  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjectionMatrix"), false, flatten(projectionMatrix));
+  gl.uniformMatrix4fv(
+    gl.getUniformLocation(program, "uModelViewMatrix"),
+    false,
+    flatten(modelViewMatrix)
+  );
+  gl.uniformMatrix4fv(
+    gl.getUniformLocation(program, "uProjectionMatrix"),
+    false,
+    flatten(projectionMatrix)
+  );
 
   gl.drawArrays(gl.TRIANGLES, 0, numPositions);
 
