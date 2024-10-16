@@ -1,5 +1,4 @@
 "use strict";
-
 var program;
 
 // Default values
@@ -63,13 +62,14 @@ var vertexColors = [
 var colorIndex = 0;
 
 var gl;
-var canvas;
+var canvas = document.getElementById("gl-canvas");;
 var positionsArray = [];
 var colorsArray = [];
 var normalsArray = [];
 
 var near = 0.3;
 var far = 30.0;
+var aspect = canvas.width / canvas.height;
 var radius = 4.0;
 var theta = 0.0;
 var phi = 0.0;
@@ -293,8 +293,6 @@ function initializeInputListeners() {
 
 
 function init() {
-  canvas = document.getElementById("gl-canvas");
-
   gl = canvas.getContext('webgl2');
   if (!gl) alert("WebGL 2.0 isn't available");
 
@@ -309,11 +307,11 @@ function init() {
   switch (objectShape) {
     case "CUBE":
       colorCube();
-      projectionMatrix = ortho(-1, 1, -1, 1, near, far);
+      projectionMatrix = ortho(-16, 16, -16 / aspect, 16 / aspect, near, far);
       break;
     case "DODECAHEDRON":
       colorDodecahedron();
-      projectionMatrix = ortho(-4.0, 4.0, -4.0, 4.0, near, far);
+      projectionMatrix = ortho(-32, 32, -32 / aspect, 32 / aspect, near, far);
       break;  
   }
 
@@ -364,12 +362,8 @@ function render(){
     // Calculate and pass the normal matrix
     nMatrix = normalMatrix(modelViewMatrix, true);
     gl.uniformMatrix3fv(nMatrixLoc, false, flatten(nMatrix) );
-    
-    //
-    // projectionMatrix = ortho(-1, 1, -1, 1, -100, 100);
-    // projectionMatrix = ortho(-4.0, 4.0, -4.0, 4.0, near, far);
 
-      // Set the lighting and material properties
+    // Set the lighting and material properties
     var ambientProduct = mult(lightAmbient, materialAmbient);
     var diffuseProduct = mult(lightDiffuse, materialDiffuse);
     var specularProduct = mult(lightSpecular, materialSpecular);
@@ -381,14 +375,8 @@ function render(){
     gl.uniform4fv(gl.getUniformLocation(program, "uLightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "uShininess"), materialShininess);
 
-    // modelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
-    // gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-    // gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
-
     gl.uniformMatrix4fv(gl.getUniformLocation(program,"uModelViewMatrix"), false, flatten(modelViewMatrix));
     gl.uniformMatrix4fv( gl.getUniformLocation(program, "uProjectionMatrix"), false, flatten(projectionMatrix));
-    
-    
 
     gl.drawArrays(gl.TRIANGLES, 0, numPositions);
 
