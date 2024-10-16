@@ -84,18 +84,7 @@ var eye;
 const at = vec3(0.0, 0.0, 0.0);
 const up = vec3(0.0, 1.0, 0.0);
 
-var translation = vec4(-15.0, 0.0, 0.0, 1.0);
-
-function resetTranslation() {
-  switch (objectShape) {
-    case "CUBE":
-      translation = vec4(-15.0, 0.0, 0.0, 1.0);
-      break;
-    case "DODECAHEDRON":
-      translation = vec4(-30.0, 0.0, 0.0, 1.0);
-      break;
-  }
-}
+var translation = vec4(0.0, 0.0, 0.0, 1.0);
 
 var prevTime = 0;
 
@@ -108,16 +97,15 @@ function hexToRgb(hex) {
 }
 
 function penta(a, b, c, d, e) {
+  // Define the indices for a triangle fan forming the pentagon
   var indices = [a, b, c, a, c, d, a, d, e];
 
-  // Compute two edge vectors of the pentagon to calculate the normal
-  var t1 = subtract(vertices[b], vertices[a]);  // First edge: a -> b
-  var t2 = subtract(vertices[c], vertices[a]);  // Second edge: a -> c
-  
-  // Calculate the normal of the face using the cross product
-  var normal = cross(t1, t2);
-  normal = vec3(normal);  // Convert to vec3
-  // normal = normalize(normal); // Uncomment if you need to normalize it
+  // Use existing utility functions to compute the normal vector
+  var t1 = subtract(vertices[b], vertices[a]);  // First edge: from a to b
+  var t2 = subtract(vertices[c], vertices[b]);  // Second edge: from b to c
+  var normal = cross(t1, t2);                   // Compute normal using cross product
+  normal = vec3(normal);                        // Convert to vec3
+  // normal = normalize(normal);                // Uncomment if you need to normalize it
 
   // Loop through indices to push positions, colors, and normals
   for (var i = 0; i < indices.length; i++) {
@@ -132,14 +120,15 @@ function penta(a, b, c, d, e) {
   colorIndex++;
 }
 
-
 function quad(a, b, c, d) {
   var indices = [a, b, c, a, c, d];
 
+  // Use existing utility functions to compute the normal vector
   var t1 = subtract(vertices[b], vertices[a]);
   var t2 = subtract(vertices[c], vertices[b]);
-  var normal = cross(t1, t2);
+  var normal = cross(t1, t2);  // Compute normal using cross product and normalize
   normal = vec3(normal);
+  // normal = normalize(normal);
 
   for (var i = 0; i < indices.length; i++) {
     positionsArray.push(vertices[indices[i]]);
@@ -317,8 +306,6 @@ function initializeInputListeners() {
 
   document.getElementById("stop").addEventListener("click", function() {
     animateForce = false;
-
-    resetTranslation();
   });
 }
 
@@ -336,12 +323,10 @@ function init() {
 
   switch (objectShape) {
     case "CUBE":
-      normalsArray = [];
       colorCube();
       projectionMatrix = ortho(-16, 16, -16 / aspect, 16 / aspect, near, far);
       break;
     case "DODECAHEDRON":
-      normalsArray = [];
       colorDodecahedron();
       projectionMatrix = ortho(-32, 32, -32 / aspect, 32 / aspect, near, far);
       break;  
@@ -376,13 +361,12 @@ function init() {
 
   // Uniform locations
   nMatrixLoc = gl.getUniformLocation(program, "uNormalMatrix");
-  resetTranslation();
 
   animate(0);
 }
 
 function animate(time) {
-  var dt = (time - prevTime); // Convert to seconds
+  var dt = time - prevTime;
   prevTime = time;
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -402,19 +386,12 @@ function animate(time) {
   var specularProduct = mult(lightSpecular, materialSpecular);
 
   if (animateForce) {
-    var finished = (objectShape === "CUBE" && translation[0] >= 15.0) || (objectShape === "DODECAHEDRON" && translation[0] >= 30.0);
-
-    if (finished) {
-      resetTranslation();
-    }
-
     var acceleration = appliedForce / objectMass;
-    translation[0] += 0.5 * acceleration * dt * dt; // Use the equation of motion: s = ut + 0.5at^2
+    var velocity = acceleration * dt;
+    translation[0] += velocity;
   }
 
-  // Apply translation before the view transformation
   var translationMatrix = translate(translation[0], translation[1], translation[2]);
-  modelViewMatrix = mult(translationMatrix, modelViewMatrix);
 
   // Send the lighting and material properties to the shader program
   gl.uniform4fv(gl.getUniformLocation(program, "uAmbientProduct"), flatten(ambientProduct));
@@ -422,7 +399,8 @@ function animate(time) {
   gl.uniform4fv(gl.getUniformLocation(program, "uSpecularProduct"), flatten(specularProduct));
   gl.uniform4fv(gl.getUniformLocation(program, "uLightPosition"), flatten(lightPosition));
   gl.uniform1f(gl.getUniformLocation(program, "uShininess"), materialShininess);
-
+  
+  gl.uniformMatrix4fv(gl.getUniformLocation(program, "uModelMoveMatrix"), false, flatten(translationMatrix));
   gl.uniformMatrix4fv(gl.getUniformLocation(program, "uModelViewMatrix"), false, flatten(modelViewMatrix));
   gl.uniformMatrix4fv(gl.getUniformLocation(program, "uProjectionMatrix"), false, flatten(projectionMatrix));
 

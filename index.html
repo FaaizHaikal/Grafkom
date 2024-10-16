@@ -1,251 +1,274 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-<title>ETS Grafkom</title>
-<style>
-  body {
-    background-color: #121212; /* Dark background */
-    color: #ffffff; /* Light text */
-    font-family: Arial, sans-serif;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    margin: 20px;
-  }
-  canvas {
-    display: block;
-    margin: 0 auto;
-    border: 1px solid #000;
-    border-radius: 10px;
-  }
-  .control-group {
-    margin-bottom: 15px;
-  }
-  label {
-    display: inline-block;
-    width: 150px;
-  }
-  input[type="range"] {
-    width: 200px;
-  }
-  select, input[type="color"], input[type="range"] {
-    margin-left: 10px;
-  }
-  .start-stop {
-    margin-top: 20px;
-    padding: 10px 20px;
-    font-size: 16px;
-    border: 1px solid #000;
-    border-radius: 5px;
-  }
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+  <title>ETS Grafkom</title>
+  <style>
+    body {
+      background-color: #454545;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      padding: 0;
+      margin: 20px;
+    }
 
-  .increment-decrement {
-    margin-left: 10px;
-    padding: 5px 10px;
-    font-size: 16px;
-  }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      border: 1px solid #000;
+      border-radius: 10px;
+    }
 
-</style>
+    .control-container {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .control-column {
+      display: flex;
+      flex-direction: column;
+      width: 48%;
+    }
+
+    .control-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: inline-block;
+      width: 150px;
+    }
+
+    input[type="range"] {
+      width: 200px;
+    }
+
+    select,
+    input[type="color"],
+    input[type="range"] {
+      margin-left: 10px;
+    }
+
+    .increment-decrement {
+      margin-left: 10px;
+      padding: 5px 10px;
+      font-size: 16px;
+    }
+
+    /* Align Theta, Phi, R, and Z next to the existing commands */
+    .angle-controls {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .angle-controls .control-group {
+      width: 48%;
+    }
+
+    /* Centering the Start/Stop button in the middle */
+    .center-buttons {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .start-stop {
+      margin: 0 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: 1px solid #000;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
 
-<canvas id="gl-canvas" width="512" height="512"></canvas>
-<br>
-<br>
+  <canvas id="gl-canvas" width="1700" height="512"></canvas>
+  <br>
+  <br>
 
-<div class="control-group">
-  <label for="objectOptions">Choose Object:</label>
-  <select id="objectOptions" size="1">
-    <option value="CUBE">Cube</option>
-    <option value="DODECAHEDRON">Dodecahedron</option>
-  </select>
-</div>
+  <div class="control-container">
+    <!-- Left Column -->
+    <div class="control-column">
+      <div class="control-group">
+        <label for="objectOptions">Choose Object:</label>
+        <select id="objectOptions" size="1">
+          <option value="CUBE">Cube</option>
+          <option value="DODECAHEDRON">Dodecahedron</option>
+        </select>
+      </div>
 
 <div class="control-group">
   <label for="objectMass">Object Mass (kg):</label>
-  1 <input type="range" id="objectMass" name="objectMass" min="1" max="10" value="1"> 10
+  100 <input type="range" id="objectMass" name="objectMass" min="100" max="200" value="150"> 200
 </div>
+      <div class="control-group">
+        <label for="objectMass">Object Mass (kg):</label>
+        1 <input type="range" id="objectMass" name="objectMass" min="1" max="10" value="1"> 10
+      </div>
 
 <div class="control-group">
   <label for="force">Force (N):</label>
-  1 <input type="range" id="force" name="force" min="1" max="10" value="1"> 10
+  0.1 <input type="range" id="force" name="force" min="0.1" max="2" value="1" step="0.1"> 2
 </div>
+      <div class="control-group">
+        <label for="force">Force (N):</label>
+        1 <input type="range" id="force" name="force" min="1" max="10" value="1"> 10
+      </div>
 
-<div class="control-group">
-  <label for="trajectoryOptions">Trajectory:</label>
-  <select id="trajectoryOptions" size="1">
-    <option value="STRAIGHT">Straight</option>
-    <option value="PARABOLA">Parabola</option>
-  </select>
-</div>
+      <div class="control-group">
+        <label for="trajectoryOptions">Trajectory:</label>
+        <select id="trajectoryOptions" size="1">
+          <option value="STRAIGHT">Straight</option>
+          <option value="PARABOLA">Parabola</option>
+        </select>
+      </div>
 
-<div class="control-group">
-  <label for="theta">Theta (°):</label>
-  <button class="increment-decrement" id="increaseTheta">
-    +
-  </button>
-  <button class="increment-decrement" id="decreaseTheta">
-    -
-  </button>
-</div>
+      <!-- Angle controls (Theta, Phi, R, Z) placed side by side -->
+      <div class="angle-controls">
+        <div class="control-group">
+          <label for="theta">Theta (°):</label>
+          <button class="increment-decrement" id="increaseTheta">+</button>
+          <button class="increment-decrement" id="decreaseTheta">-</button>
+        </div>
 
-<div class="control-group"></div>
-  <label for="phi">Phi (°):</label>
-  <button class="increment-decrement" id="increasePhi">
-    +
-  </button>
-  <button class="increment-decrement" id="decreasePhi">
-    -
-  </button>
-</div>
+        <div class="control-group">
+          <label for="phi">Phi (°):</label>
+          <button class="increment-decrement" id="increasePhi">+</button>
+          <button class="increment-decrement" id="decreasePhi">-</button>
+        </div>
 
-<div class="control-group"></div>
-  <label for="phi">R:</label>
-  <button class="increment-decrement" id="increaseR">
-    +
-  </button>
-  <button class="increment-decrement" id="decreaseR">
-    -
-  </button>
-</div>
+        <div class="control-group">
+          <label for="R">R:</label>
+          <button class="increment-decrement" id="increaseR">+</button>
+          <button class="increment-decrement" id="decreaseR">-</button>
+        </div>
 
-<div class="control-group"></div>
-  <label for="phi">Z:</label>
-  <button class="increment-decrement" id="increaseZ">
-    +
-  </button>
-  <button class="increment-decrement" id="decreaseZ">
-    -
-  </button>
-</div>
+        <div class="control-group">
+          <label for="Z">Z:</label>
+          <button class="increment-decrement" id="increaseZ">+</button>
+          <button class="increment-decrement" id="decreaseZ">-</button>
+        </div>
+      </div>
+    </div>
 
-<br>
-<br>
-<!-- Lighting Stuff Happening Here -->
-<div class="control-group">
-  <label for="lightAmbient">Ambient Light:</label>
-  <input type="color" id="lightAmbient" value="#7F7F7F">
-</div>
+    <!-- Right Column -->
+    <div class="control-column">
+      <div class="control-group">
+        <label for="lightAmbient">Ambient Light:</label>
+        <input type="color" id="lightAmbient" value="#7F7F7F">
+      </div>
 
-<div class="control-group">
-  <label for="lightDiffuse">Diffuse Light:</label>
-  <input type="color" id="lightDiffuse" value="#ffffff">
-</div>
+      <div class="control-group">
+        <label for="lightDiffuse">Diffuse Light:</label>
+        <input type="color" id="lightDiffuse" value="#ffffff">
+      </div>
 
-<div class="control-group">
-  <label for="lightSpecular">Specular Light:</label>
-  <input type="color" id="lightSpecular" value="#ffffff">
-</div>
+      <div class="control-group">
+        <label for="lightSpecular">Specular Light:</label>
+        <input type="color" id="lightSpecular" value="#ffffff">
+      </div>
 
-<div class="control-group">
-  <label for="lightX">Light Position X:</label>
-  0.1 <input type="range" id="lightX" min="0.1" max="10" value="0.1"> 10
-</div>
+      <div class="control-group">
+        <label for="lightX">Light Position X:</label>
+        0.1 <input type="range" id="lightX" min="0.1" max="10" value="0.1"> 10
+      </div>
 
-<div class="control-group">
-  <label for="lightY">Light Position Y:</label>
-  0.1 <input type="range" id="lightY" min="0.1" max="10" value="0.1"> 10
-</div>
+      <div class="control-group">
+        <label for="lightY">Light Position Y:</label>
+        0.1 <input type="range" id="lightY" min="0.1" max="10" value="0.1"> 10
+      </div>
 
-<div class="control-group">
-  <label for="lightZ">Light Position Z:</label>
-  0.1 <input type="range" id="lightZ" min="0.1" max="10" value="0.1"> 10
-</div>
+      <div class="control-group">
+        <label for="lightZ">Light Position Z:</label>
+        0.1 <input type="range" id="lightZ" min="0.1" max="10" value="0.1"> 10
+      </div>
+    </div>
+  </div>
 
-<button class="start-stop" id="start">Start</button>
-<button class="start-stop" id="stop">Stop</button>
+  <!-- Centered Start/Stop Buttons -->
+  <div class="center-buttons">
+    <button class="start-stop" id="start">Start</button>
+    <button class="start-stop" id="stop">Stop</button>
+  </div>
 
-<script id="vertex-shader" type="x-shader/x-vertex">
-  #version 300 es
-  
-  in vec4 aPosition;
-  in vec4 aNormal;
-  in vec4 aColor;
-  
-  out vec4 vColor;
-  out vec3 vN, vL, vE;
-  
-  uniform mat4 uModelViewMatrix;
-  uniform mat4 uProjectionMatrix;
-  uniform vec4 uLightPosition;
-  uniform mat3 uNormalMatrix;
-  
-  void main()
-  {
-      // Transform the vertex position into eye space
+  <script id="vertex-shader" type="x-shader/x-vertex">
+    #version 300 es
+
+    in vec4 aPosition;
+    in vec4 aNormal;
+    in vec4 aColor;
+
+    out vec4 vColor;
+    out vec3 vN, vL, vE;
+
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uProjectionMatrix;
+    uniform vec4 uLightPosition;
+    uniform mat3 uNormalMatrix;
+
+    void main()
+    {
       vec3 pos = (uModelViewMatrix * aPosition).xyz;
-  
-      // Light vector: from the vertex to the light source
-      if (uLightPosition.w == 0.0) {
-          // Directional light (w = 0): light vector is just the light direction
-          vL = normalize(uLightPosition.xyz);
-      } else {
-          // Point light (w != 0): light vector points from the vertex to the light source
-          vL = normalize(uLightPosition.xyz - pos);
-      }
-  
-      // Eye vector: points from the vertex to the camera (which is at the origin in eye space)
-      vE = normalize(-pos);
-  
-      // Normal vector transformed to eye space using the normal matrix
-      vN = normalize(uNormalMatrix * aNormal.xyz);
-  
-      // Compute the final position in clip space
-      gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
-  
-      // Pass through the vertex color
-      vColor = aColor;
-  }
-  </script>
-  
 
-<script id="fragment-shader" type="x-shader/x-fragment">
-  #version 300 es
-  
-  precision mediump float;
-  
-  in vec4 vColor;        // Vertex color passed from vertex shader
-  in vec3 vN, vL, vE;    // Normal, Light, and Eye vectors
-  
-  out vec4 fColor;       // Final fragment color output
-  
-  uniform vec4 uAmbientProduct;    // Ambient light color
-  uniform vec4 uDiffuseProduct;    // Diffuse light color
-  uniform vec4 uSpecularProduct;   // Specular light color
-  uniform float uShininess;        // Shininess coefficient for specular highlights
-  
-  void main()
-  {
-      // Compute the halfway vector for specular calculation
-      vec3 H = normalize(vL + vE); 
-  
-      // Ambient component
+      if (uLightPosition.w == 0.0) {
+        vL = normalize(uLightPosition.xyz);
+      } else {
+        vL = normalize(uLightPosition.xyz - pos);
+      }
+
+      vE = normalize(-pos);
+      vN = normalize(uNormalMatrix * aNormal.xyz);
+
+      gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
+      vColor = aColor;
+    }
+  </script>
+
+  <script id="fragment-shader" type="x-shader/x-fragment">
+    #version 300 es
+
+    precision mediump float;
+
+    in vec4 vColor;
+    in vec3 vN, vL, vE;
+
+    out vec4 fColor;
+
+    uniform vec4 uAmbientProduct;
+    uniform vec4 uDiffuseProduct;
+    uniform vec4 uSpecularProduct;
+    uniform float uShininess;
+
+    void main()
+    {
+      vec3 H = normalize(vL + vE);
+
       vec4 ambient = uAmbientProduct;
-  
-      // Diffuse component (Lambert's cosine law)
-      float Kd = max( dot(vL, vN), 0.0 );
-      vec4  diffuse = Kd*uDiffuseProduct;
-  
-      // Specular component (Blinn-Phong reflection model)
+
+      float Kd = max(dot(vL, vN), 0.0);
+      vec4 diffuse = Kd * uDiffuseProduct;
+
       float Ks = pow(max(dot(vN, H), 0.0), uShininess);
       vec4 specular = Ks * uSpecularProduct;
-  
-      // If the light is behind the surface, remove specular highlights
-      if (dot(vL, vN) < 0.0) {
-          specular = vec4(0.0, 0.0, 0.0, 1.0);
-      }
-  
-      // Combine all components to get the final color
-      fColor = ambient + diffuse + specular;
-      fColor.a = 1.0;  // Set alpha to 1.0 for full opacity
-  }
-  </script>
-  
 
-<script src="initShaders.js"></script>
-<script src="MVnew.js"></script>
-<script src="script.js"></script>
+      if (dot(vL, vN) < 0.0) {
+        specular = vec4(0.0, 0.0, 0.0, 1.0);
+      }
+
+      fColor = ambient + diffuse + specular;
+      fColor.a = 1.0;
+    }
+  </script>
+
+  <script src="initShaders.js"></script>
+  <script src="MVnew.js"></script>
+  <script src="script.js"></script>
 
 </body>
+
 </html>
