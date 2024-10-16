@@ -95,9 +95,12 @@ function resetTranslation() {
       translation = vec4(-30.0, 0.0, 0.0, 1.0);
       break;
   }
+
+  initialStart = true;
 }
 
-var prevTime = 0;
+var startTime = 0;
+var initialStart = true;
 
 function hexToRgb(hex) {
   var r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -382,8 +385,12 @@ function init() {
 }
 
 function animate(time) {
-  var dt = (time - prevTime); // Convert to seconds
-  prevTime = time;
+  if (initialStart) {
+    startTime = time;
+    initialStart = false;
+  }
+
+  var dt = time - startTime;
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -409,10 +416,10 @@ function animate(time) {
     }
 
     var acceleration = appliedForce / objectMass;
-    translation[0] += 0.5 * acceleration * dt * dt; // Use the equation of motion: s = ut + 0.5at^2
+    acceleration /= 100000;
+    translation[0] += 0.5 * acceleration * dt * dt;
   }
 
-  // Apply translation before the view transformation
   var translationMatrix = translate(translation[0], translation[1], translation[2]);
   modelViewMatrix = mult(translationMatrix, modelViewMatrix);
 
