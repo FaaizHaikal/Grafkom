@@ -96,12 +96,14 @@ function penta(a, b, c, d, e) {
   // Define the indices for a triangle fan forming the pentagon
   var indices = [a, b, c, a, c, d, a, d, e];
 
-  // Use existing utility functions to compute the normal vector
-  var t1 = subtract(vertices[b], vertices[a]);  // First edge: from a to b
-  var t2 = subtract(vertices[c], vertices[b]);  // Second edge: from b to c
-  var normal = cross(t1, t2);                   // Compute normal using cross product
-  normal = vec3(normal);                        // Convert to vec3
-  // normal = normalize(normal);                // Uncomment if you need to normalize it
+  // Compute two edge vectors of the pentagon to calculate the normal
+  var t1 = subtract(vertices[b], vertices[a]);  // First edge: a -> b
+  var t2 = subtract(vertices[c], vertices[a]);  // Second edge: a -> c
+  
+  // Calculate the normal of the face using the cross product
+  var normal = cross(t1, t2);
+  normal = vec3(normal);  // Convert to vec3
+  // normal = normalize(normal); // Uncomment if you need to normalize it
 
   // Loop through indices to push positions, colors, and normals
   for (var i = 0; i < indices.length; i++) {
@@ -115,6 +117,7 @@ function penta(a, b, c, d, e) {
   // Increment color index for the next face
   colorIndex++;
 }
+
 
 function quad(a, b, c, d) {
   var indices = [a, b, c, a, c, d];
@@ -308,10 +311,12 @@ function init() {
 
   switch (objectShape) {
     case "CUBE":
+      normalsArray = [];
       colorCube();
       projectionMatrix = ortho(-1, 1, -1, 1, near, far);
       break;
     case "DODECAHEDRON":
+      normalsArray = [];
       colorDodecahedron();
       projectionMatrix = ortho(-4.0, 4.0, -4.0, 4.0, near, far);
       break;  
