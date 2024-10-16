@@ -280,11 +280,6 @@ function initializeInputListeners() {
   };
 
   document.getElementById("autoRotate").onclick = function () {
-    if (this.checked) {
-
-    }
-
-
     autoRotate = this.checked;
     document.getElementById("increaseTheta").disabled = this.checked;
     document.getElementById("decreaseTheta").disabled = this.checked;
