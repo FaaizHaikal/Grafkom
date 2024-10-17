@@ -342,12 +342,25 @@ function initializeInputListeners() {
   document.getElementById("increaseZ").onclick = function () {
     near *= 1.1;
     far *= 1.1;
+    updateProjectionMatrix();
   };
 
   document.getElementById("decreaseZ").onclick = function () {
     near *= 0.9;
     far *= 0.9;
+    updateProjectionMatrix();
   };
+
+  function updateProjectionMatrix() {
+    switch (objectShape) {
+      case "CUBE":
+        projectionMatrix = ortho(-cubeSize, cubeSize, -cubeSize / aspect, cubeSize / aspect, near, far);
+        break;
+      case "DODECAHEDRON":
+        projectionMatrix = ortho(-dodecahedronSize, dodecahedronSize, -dodecahedronSize / aspect, dodecahedronSize / aspect, near, far);
+        break;
+    }
+  }
 
   // Lighting control - Real-time updates
   document.getElementById("lightAmbient").oninput = function () {
