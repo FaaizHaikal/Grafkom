@@ -122,12 +122,12 @@ function resetTranslation() {
 function objectOut() {
   if (objectShape === "CUBE") {
     return (
-      Math.abs(translation[0]) >= cubeSize - 1 || Math.abs(translation[1]) >= cubeSize / 4.0 + 0.2
+      Math.abs(translation[0]) > cubeSize - 1 || Math.abs(translation[1]) > cubeSize / 4.0 + 0.2
     );
   }
 
   return (
-    Math.abs(translation[0]) >= dodecahedronSize - 2 || Math.abs(translation[1]) >= dodecahedronSize / 4.0 + 1.2
+    Math.abs(translation[0]) > dodecahedronSize - 2 || Math.abs(translation[1]) > dodecahedronSize / 4.0 + 1.2
   );
 }
 
