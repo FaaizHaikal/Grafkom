@@ -118,6 +118,16 @@
         </div>
 
         <div class="control-group">
+          <label for="textureOptions">Texture:</label>
+          <select id="textureOptions" size="1">
+            <option value="NONE">None</option>
+            <option value="CHECKERBOARD">Checkerboard</option>
+            <option value="IMAGE">Image</option>
+          </select>
+
+        </div>
+
+        <div class="control-group">
           <label for="objectSize">Object Size:</label>
           0.5
           <input
@@ -279,9 +289,11 @@
       in vec4 aPosition;
       in vec4 aNormal;
       in vec4 aColor;
+      in vec2 aTexCoord;
 
       out vec4 vColor;
       out vec3 vN, vL, vE;
+      out vec2 vTexCoord;
 
       uniform mat4 uModelViewMatrix;
       uniform mat4 uProjectionMatrix;
@@ -303,6 +315,7 @@
 
         gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
         vColor = aColor;
+        vTexCoord = aTexCoord;
       }
     </script>
 
@@ -313,6 +326,7 @@
 
       in vec4 vColor;
       in vec3 vN, vL, vE;
+      in  vec2 vTexCoord;
 
       out vec4 fColor;
 
@@ -320,6 +334,7 @@
       uniform vec4 uDiffuseProduct;
       uniform vec4 uSpecularProduct;
       uniform float uShininess;
+      uniform sampler2D uTextureMap;
 
       void main()
       {
@@ -337,7 +352,7 @@
           specular = vec4(0.0, 0.0, 0.0, 1.0);
         }
 
-        fColor = ambient + diffuse + specular;
+        fColor = vColor * (ambient + diffuse + specular) * texture(uTextureMap, vTexCoord);
         fColor.a = 1.0;
       }
     </script>

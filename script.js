@@ -10,6 +10,7 @@ var throwAngle = 60.0;
 var velocity = 5.0;
 var appliedForce = 1.0;
 var trajectory = "STRAIGHT";
+var textureOption = "NONE";
 var autoRotate = false;
 
 // Phong lighting properties
@@ -37,6 +38,13 @@ var vertices = [
   vec4(-0.5, 0.5, -0.5, 1.0),
   vec4(0.5, 0.5, -0.5, 1.0),
   vec4(0.5, -0.5, -0.5, 1.0),
+];
+
+var texCoord = [
+  vec2(0, 0),
+  vec2(0, 1),
+  vec2(1, 1),
+  vec2(1, 0)
 ];
 
 var vertexColors = [
@@ -69,6 +77,7 @@ var canvas = document.getElementById("gl-canvas");
 var positionsArray = [];
 var colorsArray = [];
 var normalsArray = [];
+var texCoordsArray = [];
 
 var near = 0.3;
 var far = 30.0;
@@ -107,7 +116,12 @@ function resetTranslation() {
     case "DODECAHEDRON":
       switch (trajectory) {
         case "PARABOLA":
-          translation = vec4(-dodecahedronSize + 2, -dodecahedronSize / 4 + 1.2, 0.0, 1.0);
+          translation = vec4(
+            -dodecahedronSize + 2,
+            -dodecahedronSize / 4 + 1.2,
+            0.0,
+            1.0
+          );
           break;
         case "STRAIGHT":
           translation = vec4(-dodecahedronSize + 2, 0.0, 0.0, 1.0);
@@ -119,15 +133,82 @@ function resetTranslation() {
   initialStart = true;
 }
 
+var texSize = 64;
+var image1 = new Array();
+for (var i = 0; i < texSize; i++) image1[i] = new Array();
+for (var i = 0; i < texSize; i++)
+  for (var j = 0; j < texSize; j++) image1[i][j] = new Float32Array(4);
+for (var i = 0; i < texSize; i++)
+  for (var j = 0; j < texSize; j++) {
+    var c = ((i & 0x8) == 0) ^ ((j & 0x8) == 0);
+    image1[i][j] = [c, c, c, 1];
+  }
+
+var image2 = new Uint8Array(4 * texSize * texSize);
+for (var i = 0; i < texSize; i++)
+  for (var j = 0; j < texSize; j++)
+    for (var k = 0; k < 4; k++)
+      image2[4 * texSize * i + 4 * j + k] = 255 * image1[i][j][k];
+
+function loadTextureFromFile(url) {
+  var image = new Image();
+  image.onload = function () {
+    var texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      image
+    );
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(
+      gl.TEXTURE_2D,
+      gl.TEXTURE_MIN_FILTER,
+      gl.NEAREST_MIPMAP_LINEAR
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  };
+  image.src = url;
+}
+
+function configureTexture(image) {
+  var texture = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    texSize,
+    texSize,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    image
+  );
+  gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(
+    gl.TEXTURE_2D,
+    gl.TEXTURE_MIN_FILTER,
+    gl.NEAREST_MIPMAP_LINEAR
+  );
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+}
+
 function objectOut() {
   if (objectShape === "CUBE") {
     return (
-      Math.abs(translation[0]) > cubeSize - 1 || Math.abs(translation[1]) > cubeSize / 4.0 + 0.2
+      Math.abs(translation[0]) > cubeSize - 1 ||
+      Math.abs(translation[1]) > cubeSize / 4.0 + 0.2
     );
   }
 
   return (
-    Math.abs(translation[0]) > dodecahedronSize - 2 || Math.abs(translation[1]) > dodecahedronSize / 4.0 + 1.2
+    Math.abs(translation[0]) > dodecahedronSize - 2 ||
+    Math.abs(translation[1]) > dodecahedronSize / 4.0 + 1.2
   );
 }
 
@@ -169,15 +250,18 @@ function penta(a, b, c, d, e) {
 
 function quad(a, b, c, d) {
   var indices = [a, b, c, a, c, d];
+  var texIndex = [0, 1, 2, 0, 2, 3];
 
   var t1 = subtract(vertices[b], vertices[a]);
   var t2 = subtract(vertices[c], vertices[b]);
   var normal = cross(t1, t2);
   normal = vec3(normal);
+  
 
   for (var i = 0; i < indices.length; i++) {
     positionsArray.push(vertices[indices[i]]);
     colorsArray.push(vertexColors[colorIndex]);
+    texCoordsArray.push(texCoord[texIndex[i]]);
 
     // Add normal for each vertex
     normalsArray.push(normal);
@@ -268,6 +352,21 @@ function initializeInputListeners() {
     init();
   };
 
+  document.getElementById("textureOptions").onclick = function () {
+    textureOption = this.value;
+
+    switch (textureOption) {
+      case "NONE":
+        break;
+      case "CHECKERBOARD":
+        configureTexture(image2);
+        break;
+      case "IMAGE":
+        loadTextureFromFile("smart.jpeg");
+        break;
+    }
+  }
+
   document.getElementById("trajectoryOptions").onclick = function () {
     trajectory = this.value;
 
@@ -296,16 +395,30 @@ function initializeInputListeners() {
     switch (objectShape) {
       case "CUBE":
         cubeSize = 16 * value;
-        projectionMatrix = ortho(-cubeSize, cubeSize, -cubeSize / aspect, cubeSize / aspect, near, far);
+        projectionMatrix = ortho(
+          -cubeSize,
+          cubeSize,
+          -cubeSize / aspect,
+          cubeSize / aspect,
+          near,
+          far
+        );
         break;
       case "DODECAHEDRON":
         dodecahedronSize = 32 * value;
-        projectionMatrix = ortho(-dodecahedronSize, dodecahedronSize, -dodecahedronSize / aspect, dodecahedronSize / aspect, near, far);
+        projectionMatrix = ortho(
+          -dodecahedronSize,
+          dodecahedronSize,
+          -dodecahedronSize / aspect,
+          dodecahedronSize / aspect,
+          near,
+          far
+        );
         break;
     }
 
     resetTranslation();
-  }
+  };
 
   document.getElementById("autoRotate").onclick = function () {
     autoRotate = this.checked;
@@ -354,10 +467,24 @@ function initializeInputListeners() {
   function updateProjectionMatrix() {
     switch (objectShape) {
       case "CUBE":
-        projectionMatrix = ortho(-cubeSize, cubeSize, -cubeSize / aspect, cubeSize / aspect, near, far);
+        projectionMatrix = ortho(
+          -cubeSize,
+          cubeSize,
+          -cubeSize / aspect,
+          cubeSize / aspect,
+          near,
+          far
+        );
         break;
       case "DODECAHEDRON":
-        projectionMatrix = ortho(-dodecahedronSize, dodecahedronSize, -dodecahedronSize / aspect, dodecahedronSize / aspect, near, far);
+        projectionMatrix = ortho(
+          -dodecahedronSize,
+          dodecahedronSize,
+          -dodecahedronSize / aspect,
+          dodecahedronSize / aspect,
+          near,
+          far
+        );
         break;
     }
   }
@@ -437,12 +564,26 @@ function init() {
     case "CUBE":
       normalsArray = [];
       colorCube();
-      projectionMatrix = ortho(-cubeSize, cubeSize, -cubeSize / aspect, cubeSize / aspect, near, far);
+      projectionMatrix = ortho(
+        -cubeSize,
+        cubeSize,
+        -cubeSize / aspect,
+        cubeSize / aspect,
+        near,
+        far
+      );
       break;
     case "DODECAHEDRON":
       normalsArray = [];
       colorDodecahedron();
-      projectionMatrix = ortho(-dodecahedronSize, dodecahedronSize, -dodecahedronSize / aspect, dodecahedronSize / aspect, near, far);
+      projectionMatrix = ortho(
+        -dodecahedronSize,
+        dodecahedronSize,
+        -dodecahedronSize / aspect,
+        dodecahedronSize / aspect,
+        near,
+        far
+      );
       break;
   }
 
@@ -473,6 +614,21 @@ function init() {
   gl.vertexAttribPointer(positionLoc, 4, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(positionLoc);
 
+  var tBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW);
+    var texCoordLoc = gl.getAttribLocation(program, "aTexCoord");
+    gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(texCoordLoc);
+
+  if (textureOption === "CHECKERBOARD") {
+    configureTexture(image2);
+  } else if (textureOption === "IMAGE") {
+    loadTextureFromFile("smart.jpeg");
+  }
+
+  gl.uniform1i( gl.getUniformLocation(program, "uTextureMap"), 0);
+
   // Uniform locations
   nMatrixLoc = gl.getUniformLocation(program, "uNormalMatrix");
   resetTranslation();
@@ -499,7 +655,7 @@ function updatePosition(time) {
     return;
   }
 
-  var dt = (time - startTime);
+  var dt = time - startTime;
 
   if (objectOut()) {
     resetTranslation();
@@ -517,7 +673,8 @@ function updatePosition(time) {
       const GRAVITY = 0.005; // Adjusted gravity constant
 
       var x = velocity * Math.cos((throwAngle * Math.PI) / 180) * dt;
-      var y = (velocity * Math.sin((throwAngle * Math.PI) / 180) - GRAVITY * dt) * dt;
+      var y =
+        (velocity * Math.sin((throwAngle * Math.PI) / 180) - GRAVITY * dt) * dt;
 
       translation[0] += x / 10000;
       translation[1] += y / 10000;
