@@ -10,7 +10,7 @@ var throwAngle = 60.0;
 var velocity = 5.0;
 var appliedForce = 1.0;
 var trajectory = "STRAIGHT";
-var textureOption = "NONE";
+var textureOption = "CHECKERBOARD";
 var autoRotate = false;
 
 // Phong lighting properties
@@ -356,8 +356,6 @@ function initializeInputListeners() {
     textureOption = this.value;
 
     switch (textureOption) {
-      case "NONE":
-        break;
       case "CHECKERBOARD":
         configureTexture(image2);
         break;
