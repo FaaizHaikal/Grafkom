@@ -337,7 +337,7 @@
           specular = vec4(0.0, 0.0, 0.0, 1.0);
         }
 
-        fColor = ambient + diffuse + specular;
+        fColor = vColor * (ambient + diffuse + specular);
         fColor.a = 1.0;
       }
     </script>
