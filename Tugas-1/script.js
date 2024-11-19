@@ -31,7 +31,6 @@ const earthMaterial = new THREE.MeshStandardMaterial({
   emissiveIntensity: 2.0,
 });
 
-// Apply the Earth material to the Earth mesh
 const earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
 earthGroup.add(earthMesh);
 
@@ -167,5 +166,4 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-// Start the animation
 animate();
