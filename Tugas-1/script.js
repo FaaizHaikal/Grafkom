@@ -12,7 +12,7 @@ directionalLight.position.set(10, 10, 10);
 scene.add(directionalLight);
 
 const textureLoader = new THREE.TextureLoader();
-const geography = textureLoader.load('./assets/earth_geography.jpg');
+const geography = textureLoader.load('./assets/earth_geographylebih_cerah.jpg');
 const topography = textureLoader.load('./assets/earth_topography.jpg');
 const clouds = textureLoader.load('./assets/clouds.png');
 const ocean = textureLoader.load('./assets/oceans.png');
