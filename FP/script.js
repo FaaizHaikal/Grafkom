@@ -4,7 +4,7 @@ let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHei
 // load GLB File
 let loader = new THREE.GLTFLoader();
 let object;
-loader.load('./assets/BantayoPoboide.glb', function(gltf){
+loader.load('./assets/BantayoPoboide1.glb', function(gltf){
   object = gltf.scene;
   scene.add(object);
 });
@@ -17,8 +17,12 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0xffffff);
 document.body.appendChild(renderer.domElement);
 
-let ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
-scene.add(ambientLight);
+// let ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+// scene.add(ambientLight);
+
+let light = new THREE.DirectionalLight(0xffffff, 1.0);
+light.position.set(100, 100, -100);
+scene.add(light);
 
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
