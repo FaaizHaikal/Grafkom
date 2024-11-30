@@ -1,106 +1,177 @@
-let scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 0, 30);
+import * as THREE from 'three';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import Stats from 'three/addons/libs/stats.module.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'; 
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
+import { Sky } from 'three/addons/objects/Sky.js';
 
-const textureLoader = new THREE.TextureLoader();
-const exrLoader = new THREE.EXRLoader();
+let scene, camera, renderer, controls, stats, gui;
+let gltfLoader, textureLoader, exrLoader;
 
-let loader = new THREE.GLTFLoader();
-loader.load('./assets/BantayoPoboide1.glb', function (gltf) {
-    let object = gltf.scene;
-    scene.add(object);
-});
+function initSky() {
+    const sky = new Sky();
+    sky.scale.setScalar( 10000 );
+    scene.add( sky );
 
-function loadGrass() {
-    RepeatWrapping = THREE.RepeatWrapping;
-    MeshStandardMaterial = THREE.MeshStandardMaterial;
+    const sun = new THREE.Vector3();
 
-    const colorMap = textureLoader.load('./assets/grass.jpg');
-    const roughnessMap = textureLoader.load('./assets/grass_rough.jpg');
-    const displacementMap = textureLoader.load('./assets/grass_disp.png');
-    const normalMap = exrLoader.load('./assets/grass_normal.exr');
+    const sunParameters = {
+        turbidity: 0.1,
+        rayleigh: 1.0,
+        mieCoefficient: 0.045,
+        mieDirectionalG: 0.988,
+        elevation: 2,
+		azimuth: 180,
+        exposure: renderer.toneMappingExposure
+    };
 
-    const tileCount = 10; // Adjust this for more or less tiling
-    colorMap.wrapS = colorMap.wrapT = RepeatWrapping;
-    colorMap.repeat.set(tileCount, tileCount);
-    
-    displacementMap.wrapS = displacementMap.wrapT = RepeatWrapping;
-    displacementMap.repeat.set(tileCount, tileCount);
-    
-    normalMap.wrapS = normalMap.wrapT = RepeatWrapping;
-    normalMap.repeat.set(tileCount, tileCount);
-    
-    roughnessMap.wrapS = roughnessMap.wrapT = RepeatWrapping;
-    roughnessMap.repeat.set(tileCount, tileCount);
+    const pmremGenerator = new THREE.PMREMGenerator( renderer );
+	const sceneEnv = new THREE.Scene();
 
-    const material = new MeshStandardMaterial({
-        map: colorMap,
-        displacementMap: displacementMap,
-        displacementScale: 0.1,
-        normalMap: normalMap,
-        roughnessMap: roughnessMap,
-    });
-    
-    const geometry = new PlaneGeometry(100, 100, 256, 256); // Higher segments for better displacement
-    const mesh = new Mesh(geometry, material);
+    let renderTarget;
 
-    mesh.rotation.x = -Math.PI / 2;
-    
-    scene.add(mesh);
+    function updateSun() {
+        const skyUniforms = sky.material.uniforms;
+
+        skyUniforms[ 'turbidity' ].value = sunParameters.turbidity;
+        skyUniforms[ 'rayleigh' ].value = sunParameters.rayleigh;
+        skyUniforms[ 'mieCoefficient' ].value = sunParameters.mieCoefficient;
+        skyUniforms[ 'mieDirectionalG' ].value = sunParameters.mieDirectionalG;
+
+        const phi = THREE.MathUtils.degToRad( 90 - sunParameters.elevation );
+        const theta = THREE.MathUtils.degToRad( sunParameters.azimuth );
+
+        sun.setFromSphericalCoords( 1, phi, theta );
+
+        sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+
+        if ( renderTarget !== undefined ) renderTarget.dispose();
+
+        sceneEnv.add( sky );
+        renderTarget = pmremGenerator.fromScene( sceneEnv );
+        scene.add( sky );
+
+        scene.environment = renderTarget.texture;
+    }
+
+    updateSun();
+
+    const folderSky = gui.addFolder( 'Sky' );
+    folderSky.add( sunParameters, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSun );
+    folderSky.add( sunParameters, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSun );
+    folderSky.add( sunParameters, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSun );
+    folderSky.add( sunParameters, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSun );
+    folderSky.add( sunParameters, 'elevation', 0, 90, 0.1 ).onChange( updateSun );
+    folderSky.add( sunParameters, 'azimuth', - 180, 180, 0.1 ).onChange( updateSun );
+    folderSky.open();
 }
 
-let renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0xffffff);
-renderer.shadowMap.enabled = true;
-document.body.appendChild(renderer.domElement);
+function init() {
+    const container = document.getElementById('container');
+    
+    // loader
+    gltfLoader = new GLTFLoader();
+    textureLoader = new THREE.TextureLoader();
+    exrLoader = new EXRLoader();
 
-function setLighting(time) {
-  scene.children = scene.children.filter(child => !(child.isLight));
+    scene = new THREE.Scene();
 
-  let ambientIntensity = 0.5;
-  let directionalColor = 0xffffff;
-  let directionalIntensity = 1.0;
+    // renderer
+    
+    renderer = new THREE.WebGLRenderer();
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setAnimationLoop( animate );
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.235;
+    container.appendChild( renderer.domElement );
 
-  switch (time) {
-      case 'morning':
-          ambientIntensity = 0.3;
-          directionalColor = 0xffdcb2;
-          directionalIntensity = 0.8;
-          break;
-      case 'afternoon':
-          ambientIntensity = 0.6;
-          directionalColor = 0xffffff;
-          directionalIntensity = 1.2;
-          break;
-      case 'night':
-          ambientIntensity = 0.1;
-          directionalColor = 0x4a5fba;
-          directionalIntensity = 0.5;
-          break;
-  }
+    // camera
+    camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 1, 20000 );
+    camera.position.set(0, 15, -50);
 
-  let ambientLight = new THREE.AmbientLight(0xffffff, ambientIntensity);
-  scene.add(ambientLight);
+    // controls
 
-  let directionalLight = new THREE.DirectionalLight(directionalColor, directionalIntensity);
-  directionalLight.position.set(50, 100, -50);
-  scene.add(directionalLight);
+    controls = new OrbitControls( camera, renderer.domElement );
+    controls.screenSpacePanning = false;
+    controls.enableZoom = true;
+    controls.maxDistance = 100;
+
+    // stats
+
+    stats = new Stats();
+    container.appendChild( stats.dom );
+    
+    gui = new GUI();
+
+    initSky();
+
+    function loadHouseModel() {
+        gltfLoader.load('./assets/BantayoPoboide1.glb', function(gltf) {
+            const model = gltf.scene;
+            scene.add(model);
+        });
+    }
+
+    loadHouseModel();
+
+    function loadGround() {
+        const RepeatWrapping = THREE.RepeatWrapping;
+        const MeshStandardMaterial = THREE.MeshStandardMaterial;
+
+        const colorMap = textureLoader.load('./assets/grass_color.jpg');
+        const roughnessMap = textureLoader.load('./assets/grass_rough.jpg');
+        const displacementMap = textureLoader.load('./assets/grass_disp.png');
+        const normalMap = exrLoader.load('./assets/grass_normal.exr');
+
+        const tileCount = 10;
+        colorMap.wrapS = colorMap.wrapT = RepeatWrapping;
+        colorMap.repeat.set(tileCount, tileCount);
+        
+        displacementMap.wrapS = displacementMap.wrapT = RepeatWrapping;
+        displacementMap.repeat.set(tileCount, tileCount);
+        
+        normalMap.wrapS = normalMap.wrapT = RepeatWrapping;
+        normalMap.repeat.set(tileCount, tileCount);
+        
+        roughnessMap.wrapS = roughnessMap.wrapT = RepeatWrapping;
+        roughnessMap.repeat.set(tileCount, tileCount);
+
+        const material = new MeshStandardMaterial({
+            map: colorMap,
+            displacementMap: displacementMap,
+            displacementScale: 1.0,
+            normalMap: normalMap,
+            roughnessMap: roughnessMap,
+        });
+        
+        const geometry = new THREE.PlaneGeometry(500, 500, 1024, 1024);
+        const mesh = new THREE.Mesh(geometry, material);
+
+        mesh.rotation.x = -Math.PI / 2;
+        
+        scene.add(mesh);
+    }
+
+    loadGround();
+
+    window.addEventListener('resize', onWindowResize);
 }
 
-// Example: Set time to morning
-setLighting('morning');
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
-
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.25;
-controls.enableZoom = true;
-
-loadGrass();
-
-function animate() {
-    requestAnimationFrame(animate);
+function render() {
     renderer.render(scene, camera);
 }
-animate();
+
+function animate() {
+    stats.update();
+    render();
+}
+
+init();
