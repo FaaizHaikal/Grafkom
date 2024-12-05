@@ -8,6 +8,7 @@ import { Sky } from 'three/addons/objects/Sky.js';
 
 let scene, camera, renderer, controls, stats, gui;
 let gltfLoader, textureLoader, exrLoader;
+let sunLight;
 
 function initSky() {
     const sky = new Sky();
@@ -45,6 +46,7 @@ function initSky() {
         sun.setFromSphericalCoords( 1, phi, theta );
 
         sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+        sunLight.position.copy( sun.multiplyScalar( 100) );
 
         if ( renderTarget !== undefined ) renderTarget.dispose();
 
@@ -67,6 +69,24 @@ function initSky() {
     folderSky.open();
 }
 
+function initLight() {
+    // directional sun light
+
+    sunLight = new THREE.DirectionalLight(0xffffff, 1);
+    sunLight.castShadow = true;
+    
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 0.1;
+    sunLight.shadow.camera.far = 500;
+    sunLight.shadow.camera.left = -50;
+    sunLight.shadow.camera.right = 50;
+    sunLight.shadow.camera.top = 50;
+    sunLight.shadow.camera.bottom = -50;
+    
+    scene.add(sunLight);
+}
+
 function init() {
     const container = document.getElementById('container');
     
@@ -85,6 +105,8 @@ function init() {
     renderer.setAnimationLoop( animate );
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.235;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild( renderer.domElement );
 
     // camera
@@ -105,11 +127,20 @@ function init() {
     
     gui = new GUI();
 
+
+    initLight();
     initSky();
 
     function loadHouseModel() {
         gltfLoader.load('./assets/BantayoPoboide1.glb', function(gltf) {
             const model = gltf.scene;
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true; // Allow the object to cast shadows
+                    child.receiveShadow = true; // Allow the object to receive shadows (optional)
+                }
+            });
+
             scene.add(model);
         });
     }
@@ -148,6 +179,7 @@ function init() {
         
         const geometry = new THREE.PlaneGeometry(500, 500, 1024, 1024);
         const mesh = new THREE.Mesh(geometry, material);
+        mesh.receiveShadow = true;
 
         mesh.rotation.x = -Math.PI / 2;
         
