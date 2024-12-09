@@ -58,6 +58,27 @@ function initSky() {
 
     updateSun();
 
+    const foldercameratoggle = gui.addFolder('Toggle Camera');
+const toggleView = { inside: false };
+
+function toggleCameraView() {
+    if (toggleView.inside) {
+        // Set camera to inside view
+        camera.position.set(0, 5, 24); 
+        controls.target.set(0, 5, 23); 
+    } else {
+        // Set camera to outside view
+        camera.position.set(0, 15, -50); 
+        controls.target.set(0, 0, 0); 
+    }
+
+    controls.update();
+}
+
+// Add a toggle button to the GUI
+foldercameratoggle.add(toggleView, 'inside').name('Inside View').onChange(toggleCameraView);
+foldercameratoggle.open();
+
     const folderSky = gui.addFolder( 'Sky' );
     folderSky.add( sunParameters, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSun );
     folderSky.add( sunParameters, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSun );
