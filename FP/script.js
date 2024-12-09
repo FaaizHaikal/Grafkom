@@ -5,6 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 import { Sky } from 'three/addons/objects/Sky.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 let scene, camera, renderer, controls, stats, gui;
 let gltfLoader, textureLoader, exrLoader;
@@ -69,9 +70,26 @@ function initSky() {
 
 function init() {
     const container = document.getElementById('container');
+
+    function logCameraPosition() {
+        console.log(`Camera Position: (${camera.position.x}, ${camera.position.y}, ${camera.position.z})`);
+        console.log(`Camera Target: (${controls.target.x}, ${controls.target.y}, ${controls.target.z})`);
+    }
+    
+    // Call logCameraPosition periodically or bind it to an event
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'l') { // Press "L" to log camera position and target
+            logCameraPosition();
+        }
+    });
     
     // loader
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
     gltfLoader = new GLTFLoader();
+
+    gltfLoader.setDRACOLoader(dracoLoader);
+
     textureLoader = new THREE.TextureLoader();
     exrLoader = new EXRLoader();
 
@@ -108,7 +126,7 @@ function init() {
     initSky();
 
     function loadHouseModel() {
-        gltfLoader.load('./assets/BantayoPoboide1.glb', function(gltf) {
+        gltfLoader.load('./assets/withInterior.glb', function(gltf) {
             const model = gltf.scene;
             scene.add(model);
         });
@@ -171,6 +189,8 @@ function render() {
 
 function animate() {
     stats.update();
+    console.log(`Camera Position: (${camera.position.x}, ${camera.position.y}, ${camera.position.z})`);
+    console.log(`Camera Target: (${controls.target.x}, ${controls.target.y}, ${controls.target.z})`);
     render();
 }
 
