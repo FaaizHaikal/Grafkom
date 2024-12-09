@@ -22,7 +22,7 @@ function initSky() {
         rayleigh: 1.0,
         mieCoefficient: 0.045,
         mieDirectionalG: 0.988,
-        elevation: 2,
+        elevation: 12,
 		azimuth: 180,
         exposure: renderer.toneMappingExposure
     };
@@ -64,8 +64,8 @@ const toggleView = { inside: false };
 function toggleCameraView() {
     if (toggleView.inside) {
         // Set camera to inside view
-        camera.position.set(0, 5, 24); 
-        controls.target.set(0, 5, 23); 
+        camera.position.set(-10, 7, 27); 
+        controls.target.set(-3, 4, 23); 
     } else {
         // Set camera to outside view
         camera.position.set(0, 15, -50); 
