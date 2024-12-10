@@ -233,7 +233,7 @@ function init() {
     gui.domElement.appendChild(div);
 
     function loadHouseModel() {
-        gltfLoader.load('./assets/FixedModel.glb', function(gltf) {
+        gltfLoader.load('./assets/house.glb', function(gltf) {
             const model = gltf.scene;
             model.traverse((child) => {
                 if (child.isMesh) {
