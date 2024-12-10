@@ -114,7 +114,7 @@ function initSky(folderSky, advancedFolder) {
     folderSky.add( sunParameters, 'elevation', 0, 90, 0.1 ).onChange( updateSun );
     folderSky.add( sunParameters, 'azimuth', - 180, 180, 0.1 ).onChange( updateSun );
     folderSky.add(timeOfDayParameters, 'time', ['day', 'noon', 'night']).onChange(updateTimeOfDay);
-    folderSky.open();
+    folderSky.close();
 }
 
 function initLight() {
@@ -184,7 +184,11 @@ function init() {
     const description = `
         <h2 style="font-size: 20px; margin: 0;">Bantayo Poboide</h2>
         <br />
-        <p style="margin: 0;">This is a 3D model of a traditional house from the Bantayo Poboide tribe in Indonesia.</p>
+        <p style="margin: 0; text-align: justify;">
+            Bantayo Poboide adalah rumah adat tradisional masyarakat <strong>Gorontalo</strong>.
+            Kata <strong>Bantayo</strong> berarti balai; dan <strong>Poboide</strong> berarti
+            berbicara. Jadi, Bantayo Poboide adalah balai tempat berkumpul dan bermusyawarah.
+        </p>
     `;
 
     const div = document.createElement('div');
