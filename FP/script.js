@@ -23,12 +23,12 @@ function initSky(folderSky, advancedFolder) {
         mieCoefficient: 0.045,
         mieDirectionalG: 0.988,
         elevation: 2,
-		azimuth: 180,
+        azimuth: 180,
         exposure: renderer.toneMappingExposure
     };
 
     const pmremGenerator = new THREE.PMREMGenerator( renderer );
-	const sceneEnv = new THREE.Scene();
+    const sceneEnv = new THREE.Scene();
 
     let renderTarget;
 
@@ -180,6 +180,18 @@ function init() {
 
     initLight();
     initSky(folderSky, advancedFolder);
+
+    const description = `
+        <h2 style="font-size: 20px; margin: 0;">Bantayo Poboide</h2>
+        <br />
+        <p style="margin: 0;">This is a 3D model of a traditional house from the Bantayo Poboide tribe in Indonesia.</p>
+    `;
+
+    const div = document.createElement('div');
+    div.innerHTML = description;
+    div.style.padding = '10px'; // Add some padding for better readability
+
+    gui.domElement.appendChild(div);
 
     function loadHouseModel() {
         gltfLoader.load('./assets/BantayoPoboide.glb', function(gltf) {
