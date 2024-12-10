@@ -147,7 +147,7 @@ function init() {
     initSky();
 
     function loadHouseModel() {
-        gltfLoader.load('./assets/withInterior.glb', function(gltf) {
+        gltfLoader.load('./assets/FixedModel.glb', function(gltf) {
             const model = gltf.scene;
             scene.add(model);
         });
