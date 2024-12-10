@@ -10,7 +10,7 @@ let scene, camera, renderer, controls, stats, gui;
 let gltfLoader, textureLoader, exrLoader;
 let sunLight;
 
-function initSky() {
+function initSky(folderSky, advancedFolder) {
     const sky = new Sky();
     sky.scale.setScalar( 10000 );
     scene.add( sky );
@@ -59,20 +59,68 @@ function initSky() {
 
     updateSun();
 
-    const folderSky = gui.addFolder( 'Sky' );
-    folderSky.add( sunParameters, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSun );
-    folderSky.add( sunParameters, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSun );
-    folderSky.add( sunParameters, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSun );
-    folderSky.add( sunParameters, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSun );
+    const timeOfDay = {
+        noon: {
+            rayleigh: 1.0,
+            turbidity: 0.1,
+            minCoefficient: 0.045,
+            mieDirectionalG: 0.988, 
+            elevation: 0, 
+            azimuth: 180 
+        },
+        day: {
+            rayleigh: 1.0,
+            turbidity: 0.1,
+            minCoefficient: 0.045,
+            mieDirectionalG: 0.988, 
+            elevation: 45, 
+            azimuth: 180 
+        },
+        night: {
+            rayleigh: 0.001,
+            turbidity: 0.0,
+            minCoefficient: 0.0,
+            mieDirectionalG: 0.0,
+            elevation: 15.0,
+            azimuth: 180
+        }
+    };
+    
+    const timeOfDayParameters = { time: 'day' };
+    
+    function updateTimeOfDay() {
+        const config = timeOfDay[timeOfDayParameters.time];
+        sunParameters.turbidity = config.turbidity;
+        sunParameters.rayleigh = config.rayleigh;
+        sunParameters.mieCoefficient = config.minCoefficient;
+        sunParameters.mieDirectionalG = config.mieDirectionalG;
+        sunParameters.elevation = config.elevation;
+        sunParameters.azimuth = config.azimuth;
+        updateSun();
+
+                
+        if (folderSky.__controllers) {
+            folderSky.__controllers.forEach(controller => controller.updateDisplay());
+        }
+    }
+
+    updateTimeOfDay();
+
+    advancedFolder.add( sunParameters, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSun );
+    advancedFolder.add( sunParameters, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSun );
+    advancedFolder.add( sunParameters, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSun );
+    advancedFolder.add( sunParameters, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSun );
+    advancedFolder.close();
     folderSky.add( sunParameters, 'elevation', 0, 90, 0.1 ).onChange( updateSun );
     folderSky.add( sunParameters, 'azimuth', - 180, 180, 0.1 ).onChange( updateSun );
+    folderSky.add(timeOfDayParameters, 'time', ['day', 'noon', 'night']).onChange(updateTimeOfDay);
     folderSky.open();
 }
 
 function initLight() {
     // directional sun light
 
-    sunLight = new THREE.DirectionalLight(0xffffff, 1);
+    sunLight = new THREE.DirectionalLight(0xffffff, 0.1);
     sunLight.castShadow = true;
     
     sunLight.shadow.mapSize.width = 2048;
@@ -127,9 +175,11 @@ function init() {
     
     gui = new GUI();
 
+    const folderSky = gui.addFolder( 'Sky' );
+    const advancedFolder = folderSky.addFolder( 'Advanced' );
 
     initLight();
-    initSky();
+    initSky(folderSky, advancedFolder);
 
     function loadHouseModel() {
         gltfLoader.load('./assets/BantayoPoboide.glb', function(gltf) {
@@ -141,6 +191,7 @@ function init() {
                 }
             });
 
+            model.position.y += 0.5;
             scene.add(model);
         });
     }
