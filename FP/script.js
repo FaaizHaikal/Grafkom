@@ -9,8 +9,9 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 let scene, camera, renderer, controls, stats, gui;
 let gltfLoader, textureLoader, exrLoader;
+let sunLight;
 
-function initSky() {
+function initSky(folderSky, advancedFolder) {
     const sky = new Sky();
     sky.scale.setScalar( 10000 );
     scene.add( sky );
@@ -22,13 +23,13 @@ function initSky() {
         rayleigh: 1.0,
         mieCoefficient: 0.045,
         mieDirectionalG: 0.988,
-        elevation: 12,
-		azimuth: 180,
+        elevation: 2,
+        azimuth: 180,
         exposure: renderer.toneMappingExposure
     };
 
     const pmremGenerator = new THREE.PMREMGenerator( renderer );
-	const sceneEnv = new THREE.Scene();
+    const sceneEnv = new THREE.Scene();
 
     let renderTarget;
 
@@ -46,6 +47,7 @@ function initSky() {
         sun.setFromSphericalCoords( 1, phi, theta );
 
         sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+        sunLight.position.copy( sun.multiplyScalar( 100) );
 
         if ( renderTarget !== undefined ) renderTarget.dispose();
 
@@ -58,35 +60,80 @@ function initSky() {
 
     updateSun();
 
-    const foldercameratoggle = gui.addFolder('Toggle Camera');
-const toggleView = { inside: false };
+    const timeOfDay = {
+        noon: {
+            rayleigh: 1.0,
+            turbidity: 0.1,
+            minCoefficient: 0.045,
+            mieDirectionalG: 0.988, 
+            elevation: 0, 
+            azimuth: 180 
+        },
+        day: {
+            rayleigh: 1.0,
+            turbidity: 0.1,
+            minCoefficient: 0.045,
+            mieDirectionalG: 0.988, 
+            elevation: 45, 
+            azimuth: 180 
+        },
+        night: {
+            rayleigh: 0.001,
+            turbidity: 0.0,
+            minCoefficient: 0.0,
+            mieDirectionalG: 0.0,
+            elevation: 15.0,
+            azimuth: 180
+        }
+    };
+    
+    const timeOfDayParameters = { time: 'day' };
+    
+    function updateTimeOfDay() {
+        const config = timeOfDay[timeOfDayParameters.time];
+        sunParameters.turbidity = config.turbidity;
+        sunParameters.rayleigh = config.rayleigh;
+        sunParameters.mieCoefficient = config.minCoefficient;
+        sunParameters.mieDirectionalG = config.mieDirectionalG;
+        sunParameters.elevation = config.elevation;
+        sunParameters.azimuth = config.azimuth;
+        updateSun();
 
-function toggleCameraView() {
-    if (toggleView.inside) {
-        // Set camera to inside view
-        camera.position.set(-10, 7, 27); 
-        controls.target.set(-3, 4, 23); 
-    } else {
-        // Set camera to outside view
-        camera.position.set(0, 15, -50); 
-        controls.target.set(0, 0, 0); 
+                
+        if (folderSky.__controllers) {
+            folderSky.__controllers.forEach(controller => controller.updateDisplay());
+        }
     }
 
-    controls.update();
-}
+    updateTimeOfDay();
 
-// Add a toggle button to the GUI
-foldercameratoggle.add(toggleView, 'inside').name('Inside View').onChange(toggleCameraView);
-foldercameratoggle.open();
-
-    const folderSky = gui.addFolder( 'Sky' );
-    folderSky.add( sunParameters, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSun );
-    folderSky.add( sunParameters, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSun );
-    folderSky.add( sunParameters, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSun );
-    folderSky.add( sunParameters, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSun );
+    advancedFolder.add( sunParameters, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSun );
+    advancedFolder.add( sunParameters, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSun );
+    advancedFolder.add( sunParameters, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSun );
+    advancedFolder.add( sunParameters, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSun );
+    advancedFolder.close();
     folderSky.add( sunParameters, 'elevation', 0, 90, 0.1 ).onChange( updateSun );
     folderSky.add( sunParameters, 'azimuth', - 180, 180, 0.1 ).onChange( updateSun );
+    folderSky.add(timeOfDayParameters, 'time', ['day', 'noon', 'night']).onChange(updateTimeOfDay);
     folderSky.open();
+}
+
+function initLight() {
+    // directional sun light
+
+    sunLight = new THREE.DirectionalLight(0xffffff, 0.1);
+    sunLight.castShadow = true;
+    
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 0.1;
+    sunLight.shadow.camera.far = 500;
+    sunLight.shadow.camera.left = -50;
+    sunLight.shadow.camera.right = 50;
+    sunLight.shadow.camera.top = 50;
+    sunLight.shadow.camera.bottom = -50;
+    
+    scene.add(sunLight);
 }
 
 function init() {
@@ -124,6 +171,8 @@ function init() {
     renderer.setAnimationLoop( animate );
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.235;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild( renderer.domElement );
 
     // camera
@@ -144,11 +193,56 @@ function init() {
     
     gui = new GUI();
 
-    initSky();
+    const folderSky = gui.addFolder( 'Sky' );
+    const advancedFolder = folderSky.addFolder( 'Advanced' );
+
+    initLight();
+    initSky(folderSky, advancedFolder);
+
+    const foldercameratoggle = gui.addFolder('Toggle Camera');
+    const toggleView = { inside: false };
+
+    function toggleCameraView() {
+        if (toggleView.inside) {
+            // Set camera to inside view
+            camera.position.set(-10, 7, 27); 
+            controls.target.set(-3, 4, 23); 
+        } else {
+            // Set camera to outside view
+            camera.position.set(0, 15, -50); 
+            controls.target.set(0, 0, 0); 
+        }
+
+        controls.update();
+    }
+
+    // Add a toggle button to the GUI
+    foldercameratoggle.add(toggleView, 'inside').name('Inside View').onChange(toggleCameraView);
+    foldercameratoggle.open();
+
+    const description = `
+        <h2 style="font-size: 20px; margin: 0;">Bantayo Poboide</h2>
+        <br />
+        <p style="margin: 0;">This is a 3D model of a traditional house from the Bantayo Poboide tribe in Indonesia.</p>
+    `;
+
+    const div = document.createElement('div');
+    div.innerHTML = description;
+    div.style.padding = '10px'; // Add some padding for better readability
+
+    gui.domElement.appendChild(div);
 
     function loadHouseModel() {
         gltfLoader.load('./assets/FixedModel.glb', function(gltf) {
             const model = gltf.scene;
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true; // Allow the object to cast shadows
+                    child.receiveShadow = true; // Allow the object to receive shadows (optional)
+                }
+            });
+
+            model.position.y += 0.5;
             scene.add(model);
         });
     }
@@ -187,6 +281,7 @@ function init() {
         
         const geometry = new THREE.PlaneGeometry(500, 500, 1024, 1024);
         const mesh = new THREE.Mesh(geometry, material);
+        mesh.receiveShadow = true;
 
         mesh.rotation.x = -Math.PI / 2;
         
