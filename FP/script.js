@@ -205,8 +205,8 @@ function init() {
     function toggleCameraView() {
         if (toggleView.inside) {
             // Set camera to inside view
-            camera.position.set(-10, 7, 27); 
-            controls.target.set(-3, 4, 23); 
+            camera.position.set(-10, 8, 26.8); 
+            controls.target.set(-3, 6, 22); 
         } else {
             // Set camera to outside view
             camera.position.set(0, 15, -50); 
