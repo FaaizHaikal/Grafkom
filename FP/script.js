@@ -132,7 +132,7 @@ function init() {
     initSky();
 
     function loadHouseModel() {
-        gltfLoader.load('./assets/BantayoPoboide1.glb', function(gltf) {
+        gltfLoader.load('./assets/BantayoPoboide.glb', function(gltf) {
             const model = gltf.scene;
             model.traverse((child) => {
                 if (child.isMesh) {
