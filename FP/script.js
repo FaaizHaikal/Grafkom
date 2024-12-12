@@ -4,11 +4,12 @@ import Stats from 'three/addons/libs/stats.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'; 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 let scene, camera, renderer, controls, stats, gui;
-let gltfLoader, textureLoader, exrLoader;
+let gltfLoader, textureLoader, exrLoader, fbxLoader;
 let sunLight;
 
 let rainParticles;
@@ -224,6 +225,8 @@ function init() {
     textureLoader = new THREE.TextureLoader();
     exrLoader = new EXRLoader();
 
+    fbxLoader = new FBXLoader();
+
     scene = new THREE.Scene();
 
     // renderer
@@ -255,6 +258,9 @@ function init() {
     container.appendChild( stats.dom );
     
     gui = new GUI();
+
+    // bigger font gui
+    gui.domElement.style.fontSize = '15px';
 
     const folderSky = gui.addFolder( 'Sky' );
     const advancedFolder = folderSky.addFolder( 'Advanced' );
@@ -357,6 +363,34 @@ function init() {
     }
 
     loadGround();
+
+    function loadMultipleTrees() {
+        const treePositions = [
+            { x: 30, y: 0, z: -10 },
+            { x: -30, y: 0, z: 15 },
+            { x: 10, y: 0, z: 40 },
+            { x: -35, y: 0, z: -25 },
+            { x: 25, y: 0, z: -30 }
+        ];
+
+        treePositions.forEach(position => {
+            gltfLoader.load('./assets/tree.glb', function(gltf) {
+                const model = gltf.scene;
+                model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true; // Allow the object to cast shadows
+                        child.receiveShadow = true; // Allow the object to receive shadows (optional)
+                    }
+                });
+
+                model.position.set(position.x, position.y, position.z);
+                model.scale.set(2, 2, 2);
+                scene.add(model);
+            });
+        });
+    }
+
+    loadMultipleTrees();
 
     window.addEventListener('resize', onWindowResize);
 }
