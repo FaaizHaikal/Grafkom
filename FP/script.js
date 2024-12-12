@@ -4,12 +4,13 @@ import Stats from 'three/addons/libs/stats.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'; 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 let scene, camera, renderer, controls, stats, gui;
-let gltfLoader, textureLoader, exrLoader, fbxLoader;
+let gltfLoader, textureLoader, exrLoader;
+let loadingManager;
+
 let sunLight;
 
 let rainParticles;
@@ -200,6 +201,39 @@ function initLight() {
     scene.add(sunLight);
 }
 
+function initLoadingScreen() {
+    const loadingScreen = document.createElement('div');
+    loadingScreen.id = 'loading-screen';
+    loadingScreen.style.position = 'fixed';
+    loadingScreen.style.top = '0';
+    loadingScreen.style.left = '0';
+    loadingScreen.style.width = '100%';
+    loadingScreen.style.height = '100%';
+    loadingScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    loadingScreen.style.display = 'flex';
+    loadingScreen.style.alignItems = 'center';
+    loadingScreen.style.justifyContent = 'center';
+    loadingScreen.style.color = 'white';
+    loadingScreen.style.fontSize = '1.5rem';
+    loadingScreen.style.zIndex = '1000';
+    loadingScreen.innerHTML = 'Loading... <span id="loading-progress">0%</span>';
+    document.body.appendChild(loadingScreen);
+}
+
+function updateLoadingScreen(progress) {
+    const progressElement = document.getElementById('loading-progress');
+    if (progressElement) {
+        progressElement.innerText = `${Math.round(progress * 100)}%`;
+    }
+}
+
+function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+        loadingScreen.style.display = 'none';
+    }
+}
+
 function init() {
     const container = document.getElementById('container');
 
@@ -216,16 +250,28 @@ function init() {
     });
     
     // loader
+    loadingManager = new THREE.LoadingManager();
+
+    loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
+        console.log(`Loaded ${itemsLoaded}/${itemsTotal}: ${url}`);
+        const progress = itemsLoaded / itemsTotal;
+        updateLoadingScreen(progress);
+    };
+
+    // Hide the loading screen when everything is loaded
+    loadingManager.onLoad = function () {
+        hideLoadingScreen();
+    };
+
+    initLoadingScreen();
+    
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
-    gltfLoader = new GLTFLoader();
-
+    gltfLoader = new GLTFLoader(loadingManager);
     gltfLoader.setDRACOLoader(dracoLoader);
 
-    textureLoader = new THREE.TextureLoader();
-    exrLoader = new EXRLoader();
-
-    fbxLoader = new FBXLoader();
+    textureLoader = new THREE.TextureLoader(loadingManager);
+    exrLoader = new EXRLoader(loadingManager);
 
     scene = new THREE.Scene();
 
