@@ -16,6 +16,7 @@ let sunLight;
 let rainParticles;
 let rainGeometry;
 let rainMaterial;
+let rainSpeed = 2.5;
 let rainEnabled = true;
 
 function updateRain() {
@@ -24,7 +25,7 @@ function updateRain() {
     const positions = rainGeometry.attributes.position.array;
 
     for (var i = 0; i < positions.length; i += 3) {
-        positions[i + 1] -= 0.5; // Rain drops
+        positions[i + 1] -= rainSpeed; // Rain drops
 
         // Reset raindrop to top if it falls below ground level
         if (positions[i + 1] < 0) {
@@ -64,6 +65,10 @@ function initRain() {
         }
     }
 
+    function changeRainSpeed(value) {
+        rainSpeed = value;
+    }
+
     updateRain();
 
     rainParticles = new THREE.Points(rainGeometry, rainMaterial);
@@ -73,6 +78,8 @@ function initRain() {
     const rainFolder = gui.addFolder('Weather');
     rainFolder.add({ enableRain: rainEnabled }, 'enableRain').name('Enable Rain').onChange(toggleRain);
     rainFolder.add(rainMaterial, 'opacity', 0.0, 1.0, 0.01).name('Rain Opacity');
+    rainFolder.add(rainMaterial, 'size', 0.0, 1.0, 0.01).name('Rain Size');
+    rainFolder.add({ speed: rainSpeed }, 'speed', 0.5, 10.0, 0.1).name('Rain Speed').onChange(changeRainSpeed);
     rainFolder.close();
 }
 
