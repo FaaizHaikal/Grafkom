@@ -261,6 +261,7 @@ function init() {
 
     initLight();
     initSky(folderSky, advancedFolder);
+    initRain();
 
     const foldercameratoggle = gui.addFolder('Toggle Camera');
     const toggleView = { inside: false };
@@ -282,7 +283,6 @@ function init() {
     // Add a toggle button to the GUI
     foldercameratoggle.add(toggleView, 'inside').name('Inside View').onChange(toggleCameraView);
     foldercameratoggle.open();
-    initRain();
 
     const description = `
         <h2 style="font-size: 20px; margin: 0;">Bantayo Poboide</h2>
