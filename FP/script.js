@@ -10,6 +10,69 @@ let scene, camera, renderer, controls, stats, gui;
 let gltfLoader, textureLoader, exrLoader;
 let sunLight;
 
+let rainParticles;
+let rainGeometry;
+let rainMaterial;
+let rainEnabled = true;
+
+function updateRain() {
+    if (!rainEnabled || !rainParticles) return;
+
+    const positions = rainGeometry.attributes.position.array;
+
+    for (var i = 0; i < positions.length; i += 3) {
+        positions[i + 1] -= 0.5; // Rain drops
+
+        // Reset raindrop to top if it falls below ground level
+        if (positions[i + 1] < 0) {
+            positions[i + 1] = 200;
+        }
+    }
+
+    rainGeometry.attributes.position.needsUpdate = true;
+}
+
+function initRain() {
+    const rainCount = 5000;
+    rainGeometry = new THREE.BufferGeometry();
+
+    const positions = new Float32Array(rainCount * 3);
+    for (var i = 0; i < rainCount; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 500;
+        positions[i * 3 + 1] = Math.random() * 200;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 500;
+    }
+
+    rainGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    rainMaterial = new THREE.PointsMaterial({
+        color: 0xaaaaaa,
+        size: 0.1,
+        transparent: true,
+        opacity: 1.0
+    });
+
+    function toggleRain() {
+        rainEnabled = !rainEnabled;
+        if (rainEnabled) {
+            scene.add(rainParticles);
+        } else {
+            scene.remove(rainParticles);
+        }
+    }
+
+    updateRain();
+
+    rainParticles = new THREE.Points(rainGeometry, rainMaterial);
+    scene.add(rainParticles);
+
+
+    const rainFolder = gui.addFolder('Weather');
+    rainFolder.add({ enableRain: rainEnabled }, 'enableRain').name('Enable Rain').onChange(toggleRain);
+    rainFolder.add(rainMaterial, 'opacity', 0.0, 1.0, 0.01).name('Rain Opacity');
+    rainFolder.close();
+}
+
 function initSky(folderSky, advancedFolder) {
     const sky = new Sky();
     sky.scale.setScalar( 10000 );
@@ -180,6 +243,7 @@ function init() {
 
     initLight();
     initSky(folderSky, advancedFolder);
+    initRain();
 
     const description = `
         <h2 style="font-size: 20px; margin: 0;">Bantayo Poboide</h2>
@@ -270,6 +334,7 @@ function render() {
 
 function animate() {
     stats.update();
+    updateRain();
     render();
 }
 
