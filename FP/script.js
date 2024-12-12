@@ -216,7 +216,7 @@ function initLoadingScreen() {
     loadingScreen.style.color = 'white';
     loadingScreen.style.fontSize = '1.5rem';
     loadingScreen.style.zIndex = '1000';
-    loadingScreen.innerHTML = 'Loading... <span id="loading-progress">0%</span>';
+    loadingScreen.innerHTML = 'Please wait... <span id="loading-progress">0%</span>';
     document.body.appendChild(loadingScreen);
 }
 
