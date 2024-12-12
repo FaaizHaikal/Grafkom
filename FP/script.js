@@ -5,6 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 import { Sky } from 'three/addons/objects/Sky.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 let scene, camera, renderer, controls, stats, gui;
 let gltfLoader, textureLoader, exrLoader;
@@ -200,9 +201,26 @@ function initLight() {
 
 function init() {
     const container = document.getElementById('container');
+
+    function logCameraPosition() {
+        console.log(`Camera Position: (${camera.position.x}, ${camera.position.y}, ${camera.position.z})`);
+        console.log(`Camera Target: (${controls.target.x}, ${controls.target.y}, ${controls.target.z})`);
+    }
+    
+    // Call logCameraPosition periodically or bind it to an event
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'l') { // Press "L" to log camera position and target
+            logCameraPosition();
+        }
+    });
     
     // loader
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
     gltfLoader = new GLTFLoader();
+
+    gltfLoader.setDRACOLoader(dracoLoader);
+
     textureLoader = new THREE.TextureLoader();
     exrLoader = new EXRLoader();
 
@@ -245,6 +263,27 @@ function init() {
     initSky(folderSky, advancedFolder);
     initRain();
 
+    const foldercameratoggle = gui.addFolder('Toggle Camera');
+    const toggleView = { inside: false };
+
+    function toggleCameraView() {
+        if (toggleView.inside) {
+            // Set camera to inside view
+            camera.position.set(-10, 8, 26.8); 
+            controls.target.set(-3, 6, 22); 
+        } else {
+            // Set camera to outside view
+            camera.position.set(0, 15, -50); 
+            controls.target.set(0, 0, 0); 
+        }
+
+        controls.update();
+    }
+
+    // Add a toggle button to the GUI
+    foldercameratoggle.add(toggleView, 'inside').name('Inside View').onChange(toggleCameraView);
+    foldercameratoggle.open();
+
     const description = `
         <h2 style="font-size: 20px; margin: 0;">Bantayo Poboide</h2>
         <br />
@@ -262,7 +301,7 @@ function init() {
     gui.domElement.appendChild(div);
 
     function loadHouseModel() {
-        gltfLoader.load('./assets/BantayoPoboide.glb', function(gltf) {
+        gltfLoader.load('./assets/house.glb', function(gltf) {
             const model = gltf.scene;
             model.traverse((child) => {
                 if (child.isMesh) {
